@@ -1,29 +1,21 @@
-export default function StatsBar() {
-  const stats = [
-    { value: "70+", label: "Projets en compétition", icon: "🚀", color: "#a855f7" },
-    { value: "45k€", label: "À distribuer", icon: "💰", color: "#3b82f6" },
-    { value: "15+", label: "ONG partenaires", icon: "🤝", color: "#06b6d4" },
-    { value: "1 200+", label: "Votants attendus", icon: "🗳️", color: "#10b981" },
-  ];
+const stats = [
+  { value: "70+",     label: "Projets en compétition", icon: "🚀", color: "#4890E8" },
+  { value: "45 000€", label: "À redistribuer",          icon: "💰", color: "#2ABFC4" },
+  { value: "12",      label: "ONG partenaires",          icon: "🤝", color: "#4890E8" },
+  { value: "1 200+",  label: "Votants attendus",         icon: "🗳️", color: "#2ABFC4" },
+];
 
+export default function StatsBar() {
   return (
-    <section className="py-16 relative">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <section className="py-10 sm:py-14">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {stats.map(({ value, label, icon, color }) => (
-            <div
-              key={label}
-              className="glass card-hover p-6 text-center"
-              style={{ "--accent": color } as React.CSSProperties}
-            >
-              <div className="text-3xl mb-2">{icon}</div>
-              <div
-                className="text-3xl font-black mb-1"
-                style={{ color }}
-              >
-                {value}
-              </div>
-              <p className="text-sm text-white/50 leading-snug">{label}</p>
+            <div key={label}
+              className="glass card-hover p-5 sm:p-6 flex flex-col items-center text-center gap-2 rounded-2xl">
+              <span className="text-2xl sm:text-3xl">{icon}</span>
+              <span className="text-2xl sm:text-3xl font-black" style={{ color }}>{value}</span>
+              <span className="text-xs sm:text-sm text-muted leading-snug">{label}</span>
             </div>
           ))}
         </div>
