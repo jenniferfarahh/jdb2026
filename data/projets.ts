@@ -1,0 +1,232 @@
+export type Projet = {
+  id: string;
+  name: string;
+  asso: string;
+  description: string;
+  longDescription: string;
+  category: string;
+  categoryColor: string;
+  emoji: string;
+  montant: number;
+  pays: string;
+  impact: string;
+};
+
+export const categories = [
+  { id: "tous", label: "Tous les projets", color: "#a855f7" },
+  { id: "humanitaire", label: "Humanitaire", color: "#ef4444" },
+  { id: "education", label: "Éducation", color: "#3b82f6" },
+  { id: "environnement", label: "Environnement", color: "#10b981" },
+  { id: "sante", label: "Santé", color: "#f59e0b" },
+  { id: "tech", label: "Tech & Innovation", color: "#8b5cf6" },
+  { id: "culture", label: "Culture & Sport", color: "#ec4899" },
+];
+
+export const projets: Projet[] = [
+  // HUMANITAIRE
+  {
+    id: "solidarite-sahel",
+    name: "Solidarité Sahel",
+    asso: "Aide & Partage",
+    description: "Construction de puits et accès à l'eau potable au Mali et au Burkina Faso.",
+    longDescription: "Ce projet vise à construire 5 nouveaux puits dans des villages isolés du Sahel. L'accès à l'eau potable transforme la vie de communautés entières, permettant aux enfants d'aller à l'école et aux femmes de ne plus marcher des heures chaque jour.",
+    category: "Humanitaire",
+    categoryColor: "#ef4444",
+    emoji: "💧",
+    montant: 8000,
+    pays: "Mali, Burkina Faso",
+    impact: "5 000 bénéficiaires directs",
+  },
+  {
+    id: "refuge-enfants",
+    name: "Refuge pour Enfants",
+    asso: "Les Mains Tendues",
+    description: "Centre d'accueil d'urgence pour enfants vulnérables en situation de crise.",
+    longDescription: "Construction et équipement d'un centre d'accueil d'urgence pour des enfants orphelins ou séparés de leurs familles dans des zones de conflit. Le centre proposera hébergement, nourriture, soutien psychologique et éducation.",
+    category: "Humanitaire",
+    categoryColor: "#ef4444",
+    emoji: "🏠",
+    montant: 12000,
+    pays: "République Centrafricaine",
+    impact: "120 enfants accueillis/an",
+  },
+  {
+    id: "nourrir-madagascar",
+    name: "Nourrir Madagascar",
+    asso: "Action Faim Zéro",
+    description: "Programme de nutrition et d'agriculture durable pour lutter contre la malnutrition.",
+    longDescription: "Distribution de semences, formation aux techniques d'agriculture durable et création de cantines scolaires dans 12 villages du sud de Madagascar, région parmi les plus touchées par l'insécurité alimentaire.",
+    category: "Humanitaire",
+    categoryColor: "#ef4444",
+    emoji: "🌾",
+    montant: 6500,
+    pays: "Madagascar",
+    impact: "800 familles aidées",
+  },
+
+  // ÉDUCATION
+  {
+    id: "code-pour-tous",
+    name: "Code pour Tous",
+    asso: "Digital Africa",
+    description: "Ateliers de programmation pour les jeunes en zones rurales d'Afrique subsaharienne.",
+    longDescription: "Mise en place de 10 labs informatiques mobiles permettant de dispenser des cours de programmation, design et entrepreneuriat digital à des jeunes de 12 à 25 ans dans des zones sans accès stable à internet.",
+    category: "Éducation",
+    categoryColor: "#3b82f6",
+    emoji: "💻",
+    montant: 9000,
+    pays: "Sénégal, Côte d'Ivoire",
+    impact: "2 000 jeunes formés",
+  },
+  {
+    id: "ecole-liban",
+    name: "Reconstruire l'École",
+    asso: "Solidarité Liban",
+    description: "Réhabilitation d'écoles détruites et formation d'enseignants qualifiés.",
+    longDescription: "Suite aux crises successives, de nombreuses écoles libanaises sont en ruine. Ce projet finance la reconstruction de 3 établissements scolaires et la formation de 50 enseignants dans des méthodes pédagogiques modernes.",
+    category: "Éducation",
+    categoryColor: "#3b82f6",
+    emoji: "🏫",
+    montant: 15000,
+    pays: "Liban",
+    impact: "1 200 élèves",
+  },
+  {
+    id: "biblio-mobiles",
+    name: "Bibliothèques Mobiles",
+    asso: "Lire Sans Frontières",
+    description: "Caravanes de livres pour atteindre les enfants dans les zones les plus reculées.",
+    longDescription: "Des camions-bibliothèques itinérants parcourent chaque semaine les villages isolés pour apporter des livres, animer des séances de lecture et donner aux enfants l'accès à la culture et au savoir.",
+    category: "Éducation",
+    categoryColor: "#3b82f6",
+    emoji: "📚",
+    montant: 5500,
+    pays: "Maroc, Tunisie",
+    impact: "3 500 enfants touchés/mois",
+  },
+
+  // ENVIRONNEMENT
+  {
+    id: "eco-innov",
+    name: "EcoInnov",
+    asso: "GreenTech Solutions",
+    description: "Fabrication de panneaux solaires low-cost à partir de matériaux recyclés.",
+    longDescription: "Développement d'une chaîne de production locale de mini-panneaux solaires utilisant des déchets électroniques recyclés. Ces panneaux alimentent les foyers et écoles dans des zones sans réseau électrique.",
+    category: "Environnement",
+    categoryColor: "#10b981",
+    emoji: "☀️",
+    montant: 10000,
+    pays: "Kenya, Tanzanie",
+    impact: "500 foyers électrifiés",
+  },
+  {
+    id: "forets-amazonie",
+    name: "Forêts en Vie",
+    asso: "Amazon Guardian",
+    description: "Reforestation et protection de la biodiversité en Amazonie brésilienne.",
+    longDescription: "Plantation de 50 000 arbres indigènes et création d'un réseau de surveillance communautaire pour lutter contre la déforestation illégale. Le projet forme également des guides écoresponsables locaux.",
+    category: "Environnement",
+    categoryColor: "#10b981",
+    emoji: "🌳",
+    montant: 7500,
+    pays: "Brésil",
+    impact: "50 000 arbres plantés",
+  },
+  {
+    id: "oceans-propres",
+    name: "Océans Propres",
+    asso: "Blue Ocean Force",
+    description: "Collecte de plastique océanique et transformation en matériaux de construction.",
+    longDescription: "Flottille de collecte de déchets plastiques en haute mer transformés en briques de construction écologiques pour des logements sociaux dans les pays en développement côtiers.",
+    category: "Environnement",
+    categoryColor: "#10b981",
+    emoji: "🌊",
+    montant: 11000,
+    pays: "Philippines, Indonésie",
+    impact: "20 tonnes de plastique/an",
+  },
+
+  // SANTÉ
+  {
+    id: "medisol",
+    name: "MédiSol",
+    asso: "Santé Pour Tous",
+    description: "Cliniques mobiles et télémédecine pour les zones rurales sans accès aux soins.",
+    longDescription: "Déploiement d'unités médicales mobiles équipées de matériel diagnostic de pointe et de connexions satellite pour des consultations en télémédecine avec des spécialistes. 30 villages couverts par semaine.",
+    category: "Santé",
+    categoryColor: "#f59e0b",
+    emoji: "🏥",
+    montant: 13000,
+    pays: "Niger, Tchad",
+    impact: "15 000 consultations/an",
+  },
+  {
+    id: "vaccination-rdc",
+    name: "Vaccin·Action",
+    asso: "Vie & Santé",
+    description: "Campagnes de vaccination et formation d'agents de santé communautaires.",
+    longDescription: "Programme de vaccination contre la rougeole, la polio et la méningite dans les zones les plus isolées de RDC, avec formation de 200 agents de santé locaux et mise en place de chaînes du froid.",
+    category: "Santé",
+    categoryColor: "#f59e0b",
+    emoji: "💉",
+    montant: 9500,
+    pays: "République Démocratique du Congo",
+    impact: "10 000 enfants vaccinés",
+  },
+
+  // TECH & INNOVATION
+  {
+    id: "agri-data",
+    name: "AgriData Africa",
+    asso: "FarmTech",
+    description: "Plateforme IA d'aide à la décision pour les agriculteurs africains.",
+    longDescription: "Application mobile accessible sans connexion internet permanente qui analyse les données météo, sol et marché pour aider les petits agriculteurs à optimiser leurs récoltes et vendre au bon prix au bon moment.",
+    category: "Tech & Innovation",
+    categoryColor: "#8b5cf6",
+    emoji: "🤖",
+    montant: 8500,
+    pays: "Ghana, Nigeria",
+    impact: "5 000 agriculteurs connectés",
+  },
+  {
+    id: "drone-medical",
+    name: "MedDrone",
+    asso: "AeroCare",
+    description: "Livraison de médicaments et de sang par drone dans les zones enclavées.",
+    longDescription: "Réseau de drones autonomes pour livrer des médicaments urgents, du sang et des vaccins dans des zones inaccessibles par voie terrestre. Temps de livraison réduit de 6h à 30 min dans les zones montagneuses.",
+    category: "Tech & Innovation",
+    categoryColor: "#8b5cf6",
+    emoji: "🚁",
+    montant: 18000,
+    pays: "Rwanda, Mozambique",
+    impact: "200 livraisons urgentes/mois",
+  },
+
+  // CULTURE & SPORT
+  {
+    id: "art-social",
+    name: "ArtSocial",
+    asso: "Créations Sans Frontières",
+    description: "Ateliers d'arts plastiques et de musique pour les enfants des bidonvilles.",
+    longDescription: "Programme d'ateliers artistiques hebdomadaires (peinture, sculpture, musique) pour les enfants de 5 à 15 ans vivant dans les favelas de Rio et de Kinshasa. L'art comme vecteur d'émancipation et de confiance en soi.",
+    category: "Culture & Sport",
+    categoryColor: "#ec4899",
+    emoji: "🎨",
+    montant: 5000,
+    pays: "Brésil, RDC",
+    impact: "450 enfants bénéficiaires",
+  },
+  {
+    id: "sport-paix",
+    name: "Sport & Paix",
+    asso: "Jeux du Monde",
+    description: "Tournois sportifs inter-communautaires pour favoriser la cohésion sociale.",
+    longDescription: "Organisation de tournois de football, basketball et athlétisme réunissant des jeunes de communautés rivales ou ethnies différentes. Le sport comme outil de dialogue et de réconciliation post-conflit.",
+    category: "Culture & Sport",
+    categoryColor: "#ec4899",
+    emoji: "⚽",
+    montant: 4500,
+    pays: "Côte d'Ivoire, Burundi",
+    impact: "1 200 jeunes participants",
+  },
+];
