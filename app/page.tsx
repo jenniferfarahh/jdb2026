@@ -77,11 +77,11 @@ export default function Home() {
       <div className="fade-up" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1100 }}>
           <div className="
             flex flex-col items-center text-center gap-8
-            lg:flex-row lg:items-center lg:text-left lg:gap-20 lg:justify-between
+            lg:flex-row lg:items-center lg:gap-20 lg:justify-between
           ">
 
           {/* ══ LEFT ══ */}
-          <div className="flex flex-col items-center lg:items-start gap-7 w-full lg:flex-1">
+          <div className="flex flex-col items-center gap-7 w-full lg:flex-1">
 
             {/* Logo */}
             <div className="logo-glow w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[400px]">
@@ -122,7 +122,7 @@ export default function Home() {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+            <div className="flex flex-wrap gap-4 justify-center">
               <Link href="/projets" className="btn-primary">Voir les projets →</Link>
               <Link href="/je-vote" className="btn-ghost">✦ Je Vote</Link>
             </div>
