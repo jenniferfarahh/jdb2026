@@ -5,6 +5,18 @@ import Image from "next/image";
 import { projets, categories } from "@/data/projets";
 import { ongs } from "@/data/ong";
 
+// ── Window width hook ──────────────────────────────────────────────────────
+
+function useWindowWidth() {
+  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 9999);
+  useEffect(() => {
+    const handler = () => setW(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return w;
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type PromoType = "P2027" | "P2028" | "P2029" | "Bachelor" | "Other";
@@ -148,10 +160,11 @@ function WeightPill({ weight, active }: { weight: number; active: boolean }) {
 
 // ── RankSlot ───────────────────────────────────────────────────────────────
 
-function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: {
+function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown, isMobile }: {
   rank: number; weight: number; projectId: string | null;
   onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
   canMoveUp: boolean; canMoveDown: boolean;
+  isMobile?: boolean;
 }) {
   const projet = projectId ? projets.find(p => p.id === projectId) : null;
 
@@ -191,23 +204,25 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
             <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{projet.asso}</p>
           </div>
           <WeightPill weight={weight} active />
-          {/* Reorder */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
-            {(["▲", "▼"] as const).map((arrow, di) => (
-              <button key={arrow} type="button"
-                onClick={di === 0 ? onMoveUp : onMoveDown}
-                disabled={di === 0 ? !canMoveUp : !canMoveDown}
-                style={{
-                  width: 20, height: 20, borderRadius: 5, border: "none",
-                  background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
-                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6rem", color: "var(--muted)",
-                }}>
-                {arrow}
-              </button>
-            ))}
-          </div>
+          {/* Reorder — hidden on mobile */}
+          {!isMobile && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+              {(["▲", "▼"] as const).map((arrow, di) => (
+                <button key={arrow} type="button"
+                  onClick={di === 0 ? onMoveUp : onMoveDown}
+                  disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                  style={{
+                    width: 20, height: 20, borderRadius: 5, border: "none",
+                    background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                    opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.6rem", color: "var(--muted)",
+                  }}>
+                  {arrow}
+                </button>
+              ))}
+            </div>
+          )}
           <button type="button" onClick={onRemove} style={{
             width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
             background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
@@ -226,10 +241,11 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
 
 // ── OngSlot ────────────────────────────────────────────────────────────────
 
-function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: {
+function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown, isMobile }: {
   rank: number; weight: number; ongId: string | null;
   onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
   canMoveUp: boolean; canMoveDown: boolean;
+  isMobile?: boolean;
 }) {
   const ong = ongId ? ongs.find(o => o.id === ongId) : null;
 
@@ -265,22 +281,25 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
             </p>
           </div>
           <WeightPill weight={weight} active />
-          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
-            {(["▲", "▼"] as const).map((arrow, di) => (
-              <button key={arrow} type="button"
-                onClick={di === 0 ? onMoveUp : onMoveDown}
-                disabled={di === 0 ? !canMoveUp : !canMoveDown}
-                style={{
-                  width: 20, height: 20, borderRadius: 5, border: "none",
-                  background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
-                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6rem", color: "var(--muted)",
-                }}>
-                {arrow}
-              </button>
-            ))}
-          </div>
+          {/* Reorder — hidden on mobile */}
+          {!isMobile && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+              {(["▲", "▼"] as const).map((arrow, di) => (
+                <button key={arrow} type="button"
+                  onClick={di === 0 ? onMoveUp : onMoveDown}
+                  disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                  style={{
+                    width: 20, height: 20, borderRadius: 5, border: "none",
+                    background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                    opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.6rem", color: "var(--muted)",
+                  }}>
+                  {arrow}
+                </button>
+              ))}
+            </div>
+          )}
           <button type="button" onClick={onRemove} style={{
             width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
             background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
@@ -300,6 +319,9 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function JeVotePage() {
+  const windowWidth = useWindowWidth();
+  const isMobile = windowWidth <= 600;
+
   const [auth, setAuth] = useState<AuthState>({
     loading: true, authenticated: false,
     prenom: "", nom: "", promo: "Other",
@@ -318,6 +340,7 @@ export default function JeVotePage() {
   const [submitError, setSubmitError]       = useState<string | null>(null);
   const [countdown, setCountdown]           = useState<Countdown>({ days:"00", hours:"00", minutes:"00", seconds:"00", total:0 });
   const [authError, setAuthError]           = useState<string | null>(null);
+  const [pastVote, setPastVote]             = useState<{ projectRanking: string[]; ongRanking: string[]; promoType: string } | null | "loading">("loading");
 
   // ── On mount ─────────────────────────────────────────────────────────────
 
@@ -369,6 +392,16 @@ export default function JeVotePage() {
         setStep("auth");
       });
   }, []);
+
+  // ── Fetch past vote when on already-voted screen ──────────────────────────
+
+  useEffect(() => {
+    if (step !== "already-voted") return;
+    fetch("/api/vote/my-vote")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setPastVote(d))
+      .catch(() => setPastVote(null));
+  }, [step]);
 
   // ── Countdown ticker ─────────────────────────────────────────────────────
 
@@ -509,7 +542,7 @@ export default function JeVotePage() {
 
   if (step === "before") {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px 20px" }}>
         <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
 
           {/* Title */}
@@ -537,7 +570,7 @@ export default function JeVotePage() {
           </div>
 
           {/* Info card */}
-          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px", marginBottom: 24, textAlign: "left" }}>
+          <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px", marginBottom: 24, textAlign: "left" }}>
             <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", color: "var(--teal)", marginBottom: 12 }}>
               En attendant, préparez vos choix
@@ -557,11 +590,11 @@ export default function JeVotePage() {
           </div>
 
           {/* Links */}
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Découvrir les projets
             </a>
-            <a href="/ong" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+            <a href="/ong" className="btn-ghost" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Voir les ONGs
             </a>
           </div>
@@ -574,8 +607,8 @@ export default function JeVotePage() {
 
   if (step === "closed") {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
-        <div className="glass" style={{ borderRadius: 28, padding: "48px 40px", maxWidth: 440, width: "100%", textAlign: "center" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px 20px" }}>
+        <div className="glass" style={{ borderRadius: 28, padding: isMobile ? "32px 20px" : "48px 40px", maxWidth: 440, width: "100%", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
           <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: "var(--text)", marginBottom: 10 }}>
             Votes clôturés
@@ -593,8 +626,8 @@ export default function JeVotePage() {
 
   if (step === "blocked") {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
-        <div className="glass" style={{ borderRadius: 28, padding: "40px 32px", maxWidth: 440, width: "100%", textAlign: "center" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px 20px" }}>
+        <div className="glass" style={{ borderRadius: 28, padding: isMobile ? "28px 18px" : "40px 32px", maxWidth: 440, width: "100%", textAlign: "center" }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>🏛️</div>
           <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "var(--text)", marginBottom: 10 }}>
             Vote en présentiel
@@ -615,10 +648,10 @@ export default function JeVotePage() {
             ))}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <a href="/projets" className="btn-primary" style={{ textAlign: "center", display: "block" }}>
+            <a href="/projets" className="btn-primary" style={{ textAlign: "center", display: "block", justifyContent: "center" }}>
               Découvrir les projets →
             </a>
-            <a href="/api/auth/logout" className="btn-ghost" style={{ textAlign: "center", fontSize: "0.85rem" }}>
+            <a href="/api/auth/logout" className="btn-ghost" style={{ textAlign: "center", fontSize: "0.85rem", justifyContent: "center" }}>
               Se déconnecter
             </a>
           </div>
@@ -631,7 +664,7 @@ export default function JeVotePage() {
 
   if (step === "already-voted") {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px 20px" }}>
         <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
 
           {/* Confetti-ish glow ring */}
@@ -661,8 +694,8 @@ export default function JeVotePage() {
           </p>
 
           {/* Status card */}
-          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px", marginBottom: 28 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
+          <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "14px 16px" : "20px 24px", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
               <div style={{
                 width: 10, height: 10, borderRadius: "50%",
                 background: voteStatus === "open" ? "#4ade80" : voteStatus === "before" ? "#facc15" : "#f87171",
@@ -680,6 +713,73 @@ export default function JeVotePage() {
             </div>
           </div>
 
+          {/* Past vote summary */}
+          {pastVote && pastVote !== "loading" && (pastVote.projectRanking.length > 0 || pastVote.ongRanking.length > 0) && (
+            <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px", marginBottom: 20, textAlign: "left" }}>
+              <p style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "var(--teal)", marginBottom: 14 }}>
+                🗳️ Vos choix enregistrés
+              </p>
+              {/* project ranking */}
+              {pastVote.projectRanking.length > 0 && (
+                <div style={{ marginBottom: pastVote.ongRanking.length > 0 ? 16 : 0 }}>
+                  <p style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#4890E8", marginBottom: 8 }}>✦ Projets</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {pastVote.projectRanking.map((id, i) => {
+                      const p = projets.find(x => x.id === id);
+                      if (!p) return null;
+                      const w = pastVote.promoType === "Bachelor" ? [3,2,1] : [5,4,3,2,1];
+                      return (
+                        <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                          borderRadius: 12, background: `${p.color}12`, border: `1px solid ${p.color}30` }}>
+                          <span style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "0.65rem", fontWeight: 900,
+                            background: `linear-gradient(135deg, ${p.color}80, ${p.color}40)`, color: "white" }}>{i+1}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
+                            <p style={{ fontSize: "0.7rem", color: "var(--muted)", margin: 0 }}>{p.asso}</p>
+                          </div>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#4890E8", flexShrink: 0 }}>{w[i]} pts</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {pastVote.projectRanking.length > 0 && pastVote.ongRanking.length > 0 && (
+                <div style={{ height: 1, background: "var(--border)", margin: "0 0 16px" }} />
+              )}
+              {pastVote.ongRanking.length > 0 && (
+                <div>
+                  <p style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#2ABFC4", marginBottom: 8 }}>🌍 ONGs</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {pastVote.ongRanking.map((id, i) => {
+                      const o = ongs.find(x => x.id === id);
+                      if (!o) return null;
+                      return (
+                        <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                          borderRadius: 12, background: `${o.color}12`, border: `1px solid ${o.color}30` }}>
+                          <span style={{ fontSize: "1rem", flexShrink: 0 }}>{o.logo}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</p>
+                            <p style={{ fontSize: "0.7rem", color: "var(--muted)", margin: 0,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.tagline}</p>
+                          </div>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#2ABFC4", flexShrink: 0 }}>{[3,2,1][i]} pts</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Info row */}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
             {[
@@ -688,7 +788,7 @@ export default function JeVotePage() {
               { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
             ].map(({ icon, label, sub }) => (
               <div key={label} className="glass" style={{
-                borderRadius: 16, padding: "14px 18px", textAlign: "center", minWidth: 110,
+                borderRadius: 16, padding: "14px 18px", textAlign: "center", minWidth: 100,
               }}>
                 <p style={{ fontSize: "1.2rem", marginBottom: 4 }}>{icon}</p>
                 <p style={{ fontSize: "0.92rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>{label}</p>
@@ -697,11 +797,11 @@ export default function JeVotePage() {
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Voir les projets
             </a>
-            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Se déconnecter
             </a>
           </div>
@@ -714,7 +814,7 @@ export default function JeVotePage() {
 
   if (step === "success") {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px 20px" }}>
         <div style={{ maxWidth: 540, width: "100%" }}>
 
           {/* Hero */}
@@ -740,7 +840,7 @@ export default function JeVotePage() {
           </div>
 
           {/* Summary card */}
-          <div className="glass" style={{ borderRadius: 24, padding: "24px", marginBottom: 16 }}>
+          <div className="glass" style={{ borderRadius: 24, padding: isMobile ? "16px" : "24px", marginBottom: 16 }}>
 
             {/* Projects */}
             {projectRanking.length > 0 && (
@@ -844,11 +944,11 @@ export default function JeVotePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Voir tous les projets
             </a>
-            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
               Se déconnecter
             </a>
           </div>
@@ -860,7 +960,7 @@ export default function JeVotePage() {
   // ── MAIN VOTING FLOW ──────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100dvh", padding: "40px 20px 80px" }}>
+    <div style={{ minHeight: "100dvh", padding: isMobile ? "16px 16px 80px" : "40px 20px 80px" }}>
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -871,9 +971,9 @@ export default function JeVotePage() {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7,
               padding: "6px 14px", borderRadius: 100,
               background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
-              marginBottom: 16 }}>
+              marginBottom: 16, maxWidth: "100%", flexWrap: "wrap", justifyContent: "center" }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80",
-                boxShadow: "0 0 6px #4ade80", animation: "pulse 2s infinite" }} />
+                boxShadow: "0 0 6px #4ade80", animation: "pulse 2s infinite", flexShrink: 0 }} />
               <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
                 textTransform: "uppercase", color: "#4ade80" }}>
                 Votes ouverts · fermeture dans {countdown.hours}:{countdown.minutes}:{countdown.seconds}
@@ -883,8 +983,8 @@ export default function JeVotePage() {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 7,
               padding: "6px 14px", borderRadius: 100,
               background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.3)",
-              marginBottom: 16 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15" }} />
+              marginBottom: 16, maxWidth: "100%", flexWrap: "wrap", justifyContent: "center" }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15", flexShrink: 0 }} />
               <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
                 textTransform: "uppercase", color: "#facc15" }}>
                 Ouverture dans {countdown.days}j {countdown.hours}h {countdown.minutes}m
@@ -925,7 +1025,7 @@ export default function JeVotePage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
           {/* ── STEP 1: Auth ────────────────────────────────────────────── */}
-          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+          <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: auth.authenticated ? 10 : 14 }}>
               <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
                 display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
@@ -941,7 +1041,7 @@ export default function JeVotePage() {
             </div>
 
             {auth.authenticated ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                 <p style={{ fontSize: "0.88rem", color: "var(--muted)", margin: 0 }}>
                   Bonjour <strong style={{ color: "var(--text)" }}>{auth.prenom} {auth.nom}</strong> 👋
                 </p>
@@ -955,7 +1055,7 @@ export default function JeVotePage() {
                   Connectez-vous avec votre compte <strong style={{ color: "var(--text)" }}>ViaRézo </strong> pour voter.
                   L&apos;identité garantit l&apos;unicité du vote (1 vote / compte).
                 </p>
-                <a href="/api/auth/login" className="btn-primary" style={{ display: "inline-flex", width: "100%", justifyContent: "center", padding: "14px" }}>
+                <a href="/api/auth/login" className="btn-primary" style={{ display: "flex", width: "100%", justifyContent: "center", padding: "14px", boxSizing: "border-box" }}>
                   <Image src="/logo-viarezo.png" alt="ViaRézo" width={22} height={22} style={{ borderRadius: 4, flexShrink: 0 }} />
                   Se connecter
                 </a>
@@ -966,7 +1066,7 @@ export default function JeVotePage() {
           {/* ── Promo banner ────────────────────────────────────────────── */}
           {auth.authenticated && promo && promo !== "Other" && (
             <div style={{
-              borderRadius: 16, padding: "14px 18px",
+              borderRadius: 16, padding: isMobile ? "12px 14px" : "14px 18px",
               display: "flex", alignItems: "center", gap: 12,
               background: "rgba(42,191,196,0.06)", border: "1px solid rgba(42,191,196,0.28)",
             }}>
@@ -979,12 +1079,12 @@ export default function JeVotePage() {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>
               </div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "var(--teal)", margin: 0, marginBottom: 2 }}>
                   Promotion détectée via ViaRézo
                 </p>
-                <p style={{ fontSize: "0.88rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
+                <p style={{ fontSize: isMobile ? "0.82rem" : "0.88rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
                   {promoLabel(promo)}
                   <span style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--muted)", marginLeft: 8 }}>
                     · {maxProjects} projets max · {weights.join("+")} = {maxVoix} voix
@@ -996,7 +1096,7 @@ export default function JeVotePage() {
 
           {/* ── STEP 2: Projects ────────────────────────────────────────── */}
           {promo && promo !== "Other" && (
-            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+            <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
                   display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
@@ -1013,7 +1113,9 @@ export default function JeVotePage() {
                 </span>
               </div>
               <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
-                Cliquez pour ajouter un projet à votre classement. Utilisez ▲▼ pour réordonner.
+                {isMobile
+                  ? "Appuyez pour ajouter/retirer un projet de votre classement."
+                  : "Cliquez pour ajouter un projet à votre classement. Utilisez ▲▼ pour réordonner."}
               </p>
 
               {/* Ranking slots */}
@@ -1031,6 +1133,7 @@ export default function JeVotePage() {
                       onMoveDown={() => moveProject(i, 1)}
                       canMoveUp={i > 0 && i < projectRanking.length}
                       canMoveDown={i < projectRanking.length - 1}
+                      isMobile={isMobile}
                     />
                   ))}
                 </div>
@@ -1140,7 +1243,7 @@ export default function JeVotePage() {
 
           {/* ── STEP 3: ONGs ────────────────────────────────────────────── */}
           {promo && promo !== "Other" && (step === "ong" || step === "confirm") && (
-            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+            <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
                   display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
@@ -1176,6 +1279,7 @@ export default function JeVotePage() {
                       onMoveDown={() => moveOng(i, 1)}
                       canMoveUp={i > 0 && i < ongRanking.length}
                       canMoveDown={i < ongRanking.length - 1}
+                      isMobile={isMobile}
                     />
                   ))}
                 </div>
@@ -1253,9 +1357,9 @@ export default function JeVotePage() {
               </div>
 
               {step === "ong" && (
-                <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                <div style={{ display: "flex", gap: 10, marginTop: 16, flexDirection: isMobile ? "column" : "row" }}>
                   <button type="button" onClick={() => setStep("projects")} className="btn-ghost"
-                    style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem" }}>
+                    style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem", justifyContent: "center" }}>
                     ← Retour
                   </button>
                   <button type="button" onClick={() => setStep("confirm")} className="btn-primary"
@@ -1269,15 +1373,20 @@ export default function JeVotePage() {
 
           {/* ── STEP 4: Confirm ─────────────────────────────────────────── */}
           {step === "confirm" && promo && promo !== "Other" && (
-            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+            <div className="glass" style={{ borderRadius: 20, padding: isMobile ? "16px" : "20px 24px" }}>
               <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
                 display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px" }}>
                 <StepBadge n={4} active />
                 Confirmer et soumettre
               </h3>
 
-              {/* Summary grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+              {/* Summary grid — column on mobile, 2-col on desktop */}
+              <div style={{
+                display: isMobile ? "flex" : "grid",
+                flexDirection: isMobile ? "column" : undefined,
+                gridTemplateColumns: isMobile ? undefined : "1fr 1fr",
+                gap: 10, marginBottom: 16
+              }}>
                 <div style={{ padding: "14px 16px", borderRadius: 14,
                   background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.2)" }}>
                   <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
@@ -1360,9 +1469,9 @@ export default function JeVotePage() {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", gap: 10, flexDirection: isMobile ? "column" : "row" }}>
                 <button type="button" onClick={() => setStep("ong")} disabled={submitting}
-                  className="btn-ghost" style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem" }}>
+                  className="btn-ghost" style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem", justifyContent: "center" }}>
                   ← Modifier
                 </button>
                 <button type="button" onClick={handleSubmit}

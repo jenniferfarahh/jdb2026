@@ -1,6 +1,6 @@
 import { db } from './db'
 import { voteSessions, projectVotes, ongVotes } from './db/schema'
-import { eq, sql as drizzleSql } from 'drizzle-orm'
+import { eq, sql as drizzleSql, asc } from 'drizzle-orm'
 import { createHash } from 'crypto'
 import type { PromoType, VoterCategory } from './vote-config'
 
@@ -101,6 +101,31 @@ export const voteStore = {
       total += r.count
     }
     return { total, byCategory }
+  },
+
+  async getVote(sub: string): Promise<{ projectRanking: string[]; ongRanking: string[]; promoType: string } | null> {
+    const sessions = await db
+      .select({ id: voteSessions.id, promoType: voteSessions.promoType })
+      .from(voteSessions)
+      .where(eq(voteSessions.viarezоSub, sub))
+      .limit(1)
+    if (sessions.length === 0) return null
+    const { id: sessionId, promoType } = sessions[0]
+    const pVotes = await db
+      .select({ projectId: projectVotes.projectId, rank: projectVotes.rank })
+      .from(projectVotes)
+      .where(eq(projectVotes.sessionId, sessionId))
+      .orderBy(asc(projectVotes.rank))
+    const oVotes = await db
+      .select({ ongId: ongVotes.ongId, rank: ongVotes.rank })
+      .from(ongVotes)
+      .where(eq(ongVotes.sessionId, sessionId))
+      .orderBy(asc(ongVotes.rank))
+    return {
+      projectRanking: pVotes.map(v => v.projectId),
+      ongRanking: oVotes.map(v => v.ongId),
+      promoType,
+    }
   },
 }
 

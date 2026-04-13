@@ -205,7 +205,10 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
       <div
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 95,
-          background: "var(--bg)",
+          background: "var(--nav-bg)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--border)",
           transform: open ? "translateY(0)" : "translateY(-100%)",
           transition: "transform 0.3s cubic-bezier(0.32,0.72,0,1)",
           paddingTop: 72, paddingBottom: 24, paddingLeft: 20, paddingRight: 20,
@@ -250,10 +253,10 @@ export default function Navbar() {
   const [hydrated, setHydrated] = useState(false)
 
   const isHome = pathname === "/"
-  // Immediately true on non-home pages — no flash, no effect needed
-  const showBackground = !isHome || scrolledOnHome
+  // Always show background — consistent style on all pages and screen sizes
+  const showBackground = true
 
-  // Only track scroll on homepage
+  // Only track scroll on homepage (kept for potential future use)
   useEffect(() => {
     if (!isHome) return
     function onScroll() { setScrolledOnHome(window.scrollY > 10) }
