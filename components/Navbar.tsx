@@ -7,9 +7,10 @@ import LogoForum from "@/components/LogoForum"
 import { useTheme } from "@/components/ThemeProvider"
 
 const NAV_LINKS = [
-  { href: "/projets", label: "Projets" },
-  { href: "/ong", label: "ONG" },
-  { href: "/contact", label: "Contact" },
+  { href: "/projets",                 label: "Projets",   external: false },
+  { href: "/ong",                     label: "ONG",       external: false },
+  { href: "/resultats",               label: "Résultats", external: false },
+  { href: "mailto:jdb@forum-cs.fr",   label: "Contact",   external: true  },
 ]
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -134,23 +135,25 @@ function AvatarMenu({
         </div>
 
         {/* Nav links — only on mobile */}
-        {mobileLinks && NAV_LINKS.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", textDecoration: "none", fontSize: 14, fontWeight: 600,
-              color: pathname === href ? "var(--blue-light)" : "var(--text)",
-              background: pathname === href ? "rgba(37,99,235,0.06)" : "transparent",
-            }}
-          >
-            {label}
-            {pathname === href && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />}
-          </Link>
-        ))}
+        {mobileLinks && NAV_LINKS.map(({ href, label, external }) => {
+          const isActive = !external && pathname === href
+          const sharedStyle = {
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px", textDecoration: "none", fontSize: 14, fontWeight: 600,
+            color: isActive ? "var(--blue-light)" : "var(--text)",
+            background: isActive ? "rgba(37,99,235,0.06)" : "transparent",
+          } as const
+          return external ? (
+            <a key={href} href={href} role="menuitem" onClick={() => setOpen(false)} style={sharedStyle}>
+              {label}
+            </a>
+          ) : (
+            <Link key={href} href={href} role="menuitem" onClick={() => setOpen(false)} style={sharedStyle}>
+              {label}
+              {isActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />}
+            </Link>
+          )
+        })}
 
         {/* Divider before logout */}
         <div style={{ height: 1, background: "var(--border)" }} />
@@ -209,25 +212,29 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         }}
       >
         <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {NAV_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "16px 20px", borderRadius: 16, textDecoration: "none",
-                fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em",
-                color: pathname === href ? "var(--blue-light)" : "var(--text)",
-                background: pathname === href ? "rgba(37,99,235,0.1)" : "var(--bg-card)",
-                border: `1px solid ${pathname === href ? "rgba(37,99,235,0.3)" : "var(--border)"}`,
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {label}
-              <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ href, label, external }) => {
+            const isActive = !external && pathname === href
+            const sharedStyle = {
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 20px", borderRadius: 16, textDecoration: "none",
+              fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em",
+              color: isActive ? "var(--blue-light)" : "var(--text)",
+              background: isActive ? "rgba(37,99,235,0.1)" : "var(--bg-card)",
+              border: `1px solid ${isActive ? "rgba(37,99,235,0.3)" : "var(--border)"}`,
+              WebkitTapHighlightColor: "transparent",
+            } as const
+            return external ? (
+              <a key={href} href={href} onClick={onClose} style={sharedStyle}>
+                {label}
+                <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
+              </a>
+            ) : (
+              <Link key={href} href={href} onClick={onClose} style={sharedStyle}>
+                {label}
+                <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
+              </Link>
+            )
+          })}
         </nav>
       </div>
     </>
@@ -314,27 +321,29 @@ export default function Navbar() {
             }}
             className="hide-on-mobile"
           >
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  textDecoration: "none", fontSize: 14, fontWeight: 600,
-                  letterSpacing: "0.01em", whiteSpace: "nowrap",
-                  color: pathname === href ? "var(--blue-light)" : "var(--muted)",
-                  transition: "color 0.2s",
-                  position: "relative",
-                }}
-              >
-                {label}
-                {pathname === href && (
-                  <span style={{
-                    position: "absolute", bottom: -4, left: 0, right: 0,
-                    height: 2, borderRadius: 2, background: "var(--teal)",
-                  }} />
-                )}
-              </Link>
-            ))}
+            {NAV_LINKS.map(({ href, label, external }) => {
+              const isActive = !external && pathname === href
+              const sharedStyle = {
+                textDecoration: "none", fontSize: 14, fontWeight: 600,
+                letterSpacing: "0.01em", whiteSpace: "nowrap",
+                color: isActive ? "var(--blue-light)" : "var(--muted)",
+                transition: "color 0.2s",
+                position: "relative",
+              } as const
+              return external ? (
+                <a key={href} href={href} style={sharedStyle}>{label}</a>
+              ) : (
+                <Link key={href} href={href} style={sharedStyle}>
+                  {label}
+                  {isActive && (
+                    <span style={{
+                      position: "absolute", bottom: -4, left: 0, right: 0,
+                      height: 2, borderRadius: 2, background: "var(--teal)",
+                    }} />
+                  )}
+                </Link>
+              )
+            })}
           </div>
 
           {/* ── Right: Actions ── */}

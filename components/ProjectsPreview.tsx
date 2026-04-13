@@ -24,13 +24,13 @@ export default function ProjectsPreview() {
               <div className="flex items-center justify-between">
                 <span className="badge"
                   style={{
-                    background: `${p.categoryColor}18`,
-                    color: p.categoryColor,
-                    border: `1px solid ${p.categoryColor}35`,
+                    background: `${p.color}18`,
+                    color: p.color,
+                    border: `1px solid ${p.color}35`,
                   }}>
                   {p.category}
                 </span>
-                <span className="text-xl">{p.emoji}</span>
+                {p.vital && <span title="Projet vital">❤️</span>}
               </div>
 
               <div>
@@ -42,7 +42,7 @@ export default function ProjectsPreview() {
                 <span className="text-xs text-muted">{p.asso}</span>
                 <Link href={`/projets#${p.id}`}
                   className="text-xs font-semibold transition-colors"
-                  style={{ color: p.categoryColor }}>
+                  style={{ color: p.color }}>
                   Voir plus →
                 </Link>
               </div>

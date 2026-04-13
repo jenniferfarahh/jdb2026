@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import Image from "next/image";
 import { projets, categories } from "@/data/projets";
 import { ongs } from "@/data/ong";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type PromoType = "P2027" | "P2028" | "P2029" | "Bachelor" | "Other";
-// 'blocked' = authenticated but not eligible for online vote
 type Step = "auth" | "projects" | "ong" | "confirm" | "success" | "already-voted" | "closed" | "before" | "blocked";
 
 interface AuthState {
@@ -15,15 +15,18 @@ interface AuthState {
   authenticated: boolean;
   prenom: string;
   nom: string;
-  promo: PromoType;       // auto-detected from ViaRézo
+  promo: PromoType;
   category: "ingenieur" | "bachelor" | "other";
-  eligible: boolean;      // false → blocked from online vote
+  eligible: boolean;
   hasVoted: boolean;
 }
 
-interface VoteStatus {
-  status: "before" | "open" | "closed";
-  loadingStatus: boolean;
+interface Countdown {
+  days: string;
+  hours: string;
+  minutes: string;
+  seconds: string;
+  total: number; // ms
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -35,31 +38,29 @@ const INGENIEUR_WEIGHTS = [5, 4, 3, 2, 1];
 const BACHELOR_WEIGHTS  = [3, 2, 1];
 const ONG_WEIGHTS       = [3, 2, 1];
 
-const PROMO_OPTIONS: { value: PromoType; label: string; desc: string; eligible: boolean }[] = [
-  { value: "P2027", label: "Ingénieur P2027", desc: "5 choix de projets · 15 voix max", eligible: true },
-  { value: "P2028", label: "Ingénieur P2028", desc: "5 choix de projets · 15 voix max", eligible: true },
-  { value: "P2029", label: "Ingénieur P2029", desc: "5 choix de projets · 15 voix max", eligible: true },
-  { value: "Bachelor", label: "Bachelor", desc: "3 choix de projets · 6 voix max", eligible: true },
-  { value: "Other", label: "Autre promotion", desc: "Vote en présentiel uniquement", eligible: false },
-];
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getVoteStatusNow(): "before" | "open" | "closed" {
   if (process.env.NEXT_PUBLIC_VOTE_TEST_MODE === "true") return "open";
   const now = new Date();
   if (now < VOTE_START) return "before";
-  if (now <= VOTE_END) return "open";
+  if (now <= VOTE_END)  return "open";
   return "closed";
 }
 
-function formatCountdown(target: Date): string {
-  const diff = target.getTime() - Date.now();
-  if (diff <= 0) return "00:00:00";
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  return [h, m, s].map(n => String(n).padStart(2, "0")).join(":");
+function buildCountdown(target: Date): Countdown {
+  const diff = Math.max(0, target.getTime() - Date.now());
+  const days    = Math.floor(diff / 86400000);
+  const hours   = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  return {
+    days:    String(days).padStart(2, "0"),
+    hours:   String(hours).padStart(2, "0"),
+    minutes: String(minutes).padStart(2, "0"),
+    seconds: String(seconds).padStart(2, "0"),
+    total:   diff,
+  };
 }
 
 function getWeights(promo: PromoType | null): number[] {
@@ -74,238 +75,222 @@ function getMaxProjects(promo: PromoType | null): number {
   return 0;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+// ── CountdownBlock ─────────────────────────────────────────────────────────
+
+function CountdownBlock({ value, label, color = "var(--blue)" }: { value: string; label: string; color?: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 64 }}>
+      <div style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 16,
+        padding: "14px 16px",
+        minWidth: 64,
+        textAlign: "center",
+        backdropFilter: "blur(20px)",
+        boxShadow: `0 0 24px ${color}22`,
+      }}>
+        <span style={{
+          fontFamily: "monospace",
+          fontSize: "clamp(1.6rem, 4vw, 2.2rem)",
+          fontWeight: 900,
+          letterSpacing: "-0.02em",
+          color: color,
+          display: "block",
+          lineHeight: 1,
+        }}>
+          {value}
+        </span>
+      </div>
+      <span style={{
+        fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em",
+        textTransform: "uppercase", color: "var(--muted)",
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── StepBadge ──────────────────────────────────────────────────────────────
 
 function StepBadge({ n, active }: { n: number; active: boolean }) {
   return (
-    <span
-      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-      style={{
-        background: active
-          ? "linear-gradient(135deg, #2563EB, #2ABFC4)"
-          : "rgba(255,255,255,0.08)",
-        color: active ? "white" : "rgba(232,240,255,0.4)",
-      }}
-    >
+    <span style={{
+      width: 26, height: 26, borderRadius: "50%",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      fontSize: "0.72rem", fontWeight: 900, flexShrink: 0,
+      background: active
+        ? "linear-gradient(135deg, #2563EB, #2ABFC4)"
+        : "rgba(255,255,255,0.08)",
+      color: active ? "white" : "rgba(232,240,255,0.4)",
+    }}>
       {n}
     </span>
   );
 }
 
+// ── WeightPill ─────────────────────────────────────────────────────────────
+
 function WeightPill({ weight, active }: { weight: number; active: boolean }) {
   return (
-    <span
-      className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-      style={{
-        background: active ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
-        color: active ? "#4890E8" : "rgba(232,240,255,0.3)",
-        border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.06)"}`,
-      }}
-    >
+    <span style={{
+      fontSize: "0.72rem", fontWeight: 700, padding: "3px 8px", borderRadius: 100,
+      flexShrink: 0,
+      background: active ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
+      color: active ? "#4890E8" : "rgba(232,240,255,0.3)",
+      border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.06)"}`,
+    }}>
       {weight} pt{weight > 1 ? "s" : ""}
     </span>
   );
 }
 
-function RankSlot({
-  rank,
-  weight,
-  projectId,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp,
-  canMoveDown,
-}: {
-  rank: number;
-  weight: number;
-  projectId: string | null;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
+// ── RankSlot ───────────────────────────────────────────────────────────────
+
+function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: {
+  rank: number; weight: number; projectId: string | null;
+  onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
+  canMoveUp: boolean; canMoveDown: boolean;
 }) {
   const projet = projectId ? projets.find(p => p.id === projectId) : null;
 
   return (
-    <div
-      className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200"
-      style={{
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+      borderRadius: 14, transition: "all 0.2s",
+      background: projet ? `${projet.color}12` : "rgba(255,255,255,0.025)",
+      border: `1px solid ${projet ? projet.color + "35" : "rgba(255,255,255,0.06)"}`,
+      minHeight: 52,
+    }}>
+      {/* Rank */}
+      <span style={{
+        width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "0.72rem", fontWeight: 900,
         background: projet
-          ? `${projet.categoryColor}10`
-          : "rgba(255,255,255,0.025)",
-        border: `1px solid ${projet ? projet.categoryColor + "35" : "rgba(255,255,255,0.06)"}`,
-        minHeight: "56px",
-      }}
-    >
-      {/* Rank number */}
-      <span
-        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-        style={{
-          background: projet
-            ? `linear-gradient(135deg, ${projet.categoryColor}80, ${projet.categoryColor}40)`
-            : "rgba(255,255,255,0.06)",
-          color: projet ? "white" : "rgba(232,240,255,0.25)",
-        }}
-      >
+          ? `linear-gradient(135deg, ${projet.color}90, ${projet.color}50)`
+          : "rgba(255,255,255,0.06)",
+        color: projet ? "white" : "rgba(232,240,255,0.25)",
+      }}>
         {rank}
       </span>
 
-      {/* Content */}
       {projet ? (
         <>
-          <span className="text-lg flex-shrink-0">{projet.emoji}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{projet.name}</p>
-            <p className="text-xs" style={{ color: "rgba(232,240,255,0.45)" }}>
-              {projet.asso}
+          {/* Color dot */}
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: projet.color, flexShrink: 0,
+          }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {projet.name}
             </p>
+            <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{projet.asso}</p>
           </div>
           <WeightPill weight={weight} active />
-          {/* Reorder arrows */}
-          <div className="flex flex-col gap-0.5 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onMoveUp}
-              disabled={!canMoveUp}
-              className="w-5 h-5 rounded flex items-center justify-center text-xs transition-opacity"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                opacity: canMoveUp ? 1 : 0.2,
-                cursor: canMoveUp ? "pointer" : "not-allowed",
-              }}
-              title="Monter"
-            >
-              ▲
-            </button>
-            <button
-              type="button"
-              onClick={onMoveDown}
-              disabled={!canMoveDown}
-              className="w-5 h-5 rounded flex items-center justify-center text-xs transition-opacity"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                opacity: canMoveDown ? 1 : 0.2,
-                cursor: canMoveDown ? "pointer" : "not-allowed",
-              }}
-              title="Descendre"
-            >
-              ▼
-            </button>
+          {/* Reorder */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+            {(["▲", "▼"] as const).map((arrow, di) => (
+              <button key={arrow} type="button"
+                onClick={di === 0 ? onMoveUp : onMoveDown}
+                disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                style={{
+                  width: 20, height: 20, borderRadius: 5, border: "none",
+                  background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.6rem", color: "var(--muted)",
+                }}>
+                {arrow}
+              </button>
+            ))}
           </div>
-          {/* Remove */}
-          <button
-            type="button"
-            onClick={onRemove}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 transition-opacity hover:opacity-100 opacity-60"
-            style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}
-            title="Retirer"
-          >
-            ✕
-          </button>
+          <button type="button" onClick={onRemove} style={{
+            width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
+            background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem",
+            opacity: 0.7,
+          }}>✕</button>
         </>
       ) : (
-        <p className="text-xs flex-1" style={{ color: "rgba(232,240,255,0.25)" }}>
-          — Slot {rank} libre (optionnel)
+        <p style={{ fontSize: "0.75rem", color: "rgba(232,240,255,0.2)", flex: 1 }}>
+          Slot {rank} — libre (optionnel)
         </p>
       )}
     </div>
   );
 }
 
-function OngSlot({
-  rank,
-  weight,
-  ongId,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  canMoveUp,
-  canMoveDown,
-}: {
-  rank: number;
-  weight: number;
-  ongId: string | null;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
+// ── OngSlot ────────────────────────────────────────────────────────────────
+
+function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: {
+  rank: number; weight: number; ongId: string | null;
+  onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
+  canMoveUp: boolean; canMoveDown: boolean;
 }) {
   const ong = ongId ? ongs.find(o => o.id === ongId) : null;
 
   return (
-    <div
-      className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200"
-      style={{
-        background: ong ? `${ong.color}10` : "rgba(255,255,255,0.025)",
-        border: `1px solid ${ong ? ong.color + "35" : "rgba(255,255,255,0.06)"}`,
-        minHeight: "56px",
-      }}
-    >
-      <span
-        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-        style={{
-          background: ong
-            ? `linear-gradient(135deg, ${ong.color}80, ${ong.color}40)`
-            : "rgba(255,255,255,0.06)",
-          color: ong ? "white" : "rgba(232,240,255,0.25)",
-        }}
-      >
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+      borderRadius: 14, transition: "all 0.2s",
+      background: ong ? `${ong.color}12` : "rgba(255,255,255,0.025)",
+      border: `1px solid ${ong ? ong.color + "35" : "rgba(255,255,255,0.06)"}`,
+      minHeight: 52,
+    }}>
+      <span style={{
+        width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "0.72rem", fontWeight: 900,
+        background: ong ? `linear-gradient(135deg, ${ong.color}90, ${ong.color}50)` : "rgba(255,255,255,0.06)",
+        color: ong ? "white" : "rgba(232,240,255,0.25)",
+      }}>
         {rank}
       </span>
 
       {ong ? (
         <>
-          <span className="text-lg flex-shrink-0">{ong.logo}</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{ong.name}</p>
-            <p className="text-xs truncate" style={{ color: "rgba(232,240,255,0.45)" }}>
+          <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>{ong.logo}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {ong.name}
+            </p>
+            <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {ong.tagline}
             </p>
           </div>
           <WeightPill weight={weight} active />
-          <div className="flex flex-col gap-0.5 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onMoveUp}
-              disabled={!canMoveUp}
-              className="w-5 h-5 rounded flex items-center justify-center text-xs"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                opacity: canMoveUp ? 1 : 0.2,
-                cursor: canMoveUp ? "pointer" : "not-allowed",
-              }}
-            >
-              ▲
-            </button>
-            <button
-              type="button"
-              onClick={onMoveDown}
-              disabled={!canMoveDown}
-              className="w-5 h-5 rounded flex items-center justify-center text-xs"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                opacity: canMoveDown ? 1 : 0.2,
-                cursor: canMoveDown ? "pointer" : "not-allowed",
-              }}
-            >
-              ▼
-            </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+            {(["▲", "▼"] as const).map((arrow, di) => (
+              <button key={arrow} type="button"
+                onClick={di === 0 ? onMoveUp : onMoveDown}
+                disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                style={{
+                  width: 20, height: 20, borderRadius: 5, border: "none",
+                  background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.6rem", color: "var(--muted)",
+                }}>
+                {arrow}
+              </button>
+            ))}
           </div>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 opacity-60 hover:opacity-100"
-            style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}
-          >
-            ✕
-          </button>
+          <button type="button" onClick={onRemove} style={{
+            width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
+            background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem",
+            opacity: 0.7,
+          }}>✕</button>
         </>
       ) : (
-        <p className="text-xs flex-1" style={{ color: "rgba(232,240,255,0.25)" }}>
-          — Slot {rank} libre (optionnel)
+        <p style={{ fontSize: "0.75rem", color: "rgba(232,240,255,0.2)", flex: 1 }}>
+          Slot {rank} — libre (optionnel)
         </p>
       )}
     </div>
@@ -315,40 +300,26 @@ function OngSlot({
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function JeVotePage() {
-  // Auth state
   const [auth, setAuth] = useState<AuthState>({
-    loading: true,
-    authenticated: false,
-    prenom: "",
-    nom: "",
-    promo: "Other",
-    category: "other",
-    eligible: false,
-    hasVoted: false,
+    loading: true, authenticated: false,
+    prenom: "", nom: "", promo: "Other",
+    category: "other", eligible: false, hasVoted: false,
   });
 
-  // Vote status
-  const [voteStatus, setVoteStatus] = useState<VoteStatus>({
-    status: getVoteStatusNow(),
-    loadingStatus: false,
-  });
-
-  // UI state
-  const [step, setStep] = useState<Step>("auth");
-  const [promo, setPromo] = useState<PromoType | null>(null); // kept for submit compat
+  const [voteStatus, setVoteStatus] = useState<"before" | "open" | "closed">(getVoteStatusNow());
+  const [step, setStep]                     = useState<Step>("auth");
+  const [promo, setPromo]                   = useState<PromoType | null>(null);
   const [projectRanking, setProjectRanking] = useState<string[]>([]);
-  const [ongRanking, setOngRanking] = useState<string[]>([]);
+  const [ongRanking, setOngRanking]         = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState("tous");
   const [searchProjects, setSearchProjects] = useState("");
-  const [searchOngs, setSearchOngs] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState("");
+  const [searchOngs, setSearchOngs]         = useState("");
+  const [submitting, setSubmitting]         = useState(false);
+  const [submitError, setSubmitError]       = useState<string | null>(null);
+  const [countdown, setCountdown]           = useState<Countdown>({ days:"00", hours:"00", minutes:"00", seconds:"00", total:0 });
+  const [authError, setAuthError]           = useState<string | null>(null);
 
-  // Error from OIDC callback (query param)
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  // ── On mount: read query params, check auth ───────────────────────────
+  // ── On mount ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -356,7 +327,6 @@ export default function JeVotePage() {
       const err = params.get("error");
       if (err) {
         setAuthError(decodeURIComponent(err));
-        // Clean URL
         const url = new URL(window.location.href);
         url.searchParams.delete("error");
         window.history.replaceState({}, "", url.toString());
@@ -370,27 +340,23 @@ export default function JeVotePage() {
       .then(data => {
         if (data.authenticated) {
           const detectedPromo: PromoType = data.promo ?? "Other";
-          setAuth({
-            loading: false, authenticated: true,
-            prenom: data.prenom, nom: data.nom,
-            promo: detectedPromo,
-            category: data.category ?? "other",
-            eligible: data.eligible ?? false,
-            hasVoted: data.hasVoted,
-          });
-          setPromo(detectedPromo); // sync for submit handler
+          setAuth({ loading: false, authenticated: true, prenom: data.prenom, nom: data.nom,
+            promo: detectedPromo, category: data.category ?? "other",
+            eligible: data.eligible ?? false, hasVoted: data.hasVoted });
+          setPromo(detectedPromo);
           if (data.hasVoted) {
             setStep("already-voted");
           } else if (!data.eligible) {
-            setStep("blocked"); // not P2027/P2028/Bachelor → block
+            setStep("blocked");
           } else {
             const vs = getVoteStatusNow();
-            if (vs === "before") setStep("before");
+            if (vs === "before")  setStep("before");
             else if (vs === "closed") setStep("closed");
-            else setStep("projects"); // ← skip promo step, go straight to voting
+            else setStep("projects");
           }
         } else {
-          setAuth({ loading: false, authenticated: false, prenom: "", nom: "", promo: "Other", category: "other", eligible: false, hasVoted: false });
+          setAuth({ loading: false, authenticated: false, prenom: "", nom: "",
+            promo: "Other", category: "other", eligible: false, hasVoted: false });
           const vs = getVoteStatusNow();
           if (vs === "before") setStep("before");
           else if (vs === "closed") setStep("closed");
@@ -398,34 +364,31 @@ export default function JeVotePage() {
         }
       })
       .catch(() => {
-        setAuth({ loading: false, authenticated: false, prenom: "", nom: "", promo: "Other", category: "other", eligible: false, hasVoted: false });
+        setAuth({ loading: false, authenticated: false, prenom: "", nom: "",
+          promo: "Other", category: "other", eligible: false, hasVoted: false });
         setStep("auth");
       });
   }, []);
 
-  // ── Countdown timer ────────────────────────────────────────────────────
+  // ── Countdown ticker ─────────────────────────────────────────────────────
 
   useEffect(() => {
     const tick = () => {
       const vs = getVoteStatusNow();
-      setVoteStatus(prev => ({ ...prev, status: vs }));
-      if (vs === "before") setCountdown(formatCountdown(VOTE_START));
-      else if (vs === "open") setCountdown(formatCountdown(VOTE_END));
-      else setCountdown("00:00:00");
+      setVoteStatus(vs);
+      const target = vs === "before" ? VOTE_START : vs === "open" ? VOTE_END : new Date();
+      setCountdown(buildCountdown(target));
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
-  // ── Ranked list helpers ────────────────────────────────────────────────
+  // ── Vote helpers ──────────────────────────────────────────────────────────
 
   const addProject = useCallback((id: string) => {
     const max = getMaxProjects(promo);
-    setProjectRanking(prev => {
-      if (prev.includes(id) || prev.length >= max) return prev;
-      return [...prev, id];
-    });
+    setProjectRanking(prev => (prev.includes(id) || prev.length >= max) ? prev : [...prev, id]);
   }, [promo]);
 
   const removeProject = useCallback((id: string) => {
@@ -435,18 +398,15 @@ export default function JeVotePage() {
   const moveProject = useCallback((idx: number, dir: -1 | 1) => {
     setProjectRanking(prev => {
       const next = [...prev];
-      const target = idx + dir;
-      if (target < 0 || target >= next.length) return prev;
-      [next[idx], next[target]] = [next[target], next[idx]];
+      const t = idx + dir;
+      if (t < 0 || t >= next.length) return prev;
+      [next[idx], next[t]] = [next[t], next[idx]];
       return next;
     });
   }, []);
 
   const addOng = useCallback((id: string) => {
-    setOngRanking(prev => {
-      if (prev.includes(id) || prev.length >= 3) return prev;
-      return [...prev, id];
-    });
+    setOngRanking(prev => (prev.includes(id) || prev.length >= 3) ? prev : [...prev, id]);
   }, []);
 
   const removeOng = useCallback((id: string) => {
@@ -456,14 +416,12 @@ export default function JeVotePage() {
   const moveOng = useCallback((idx: number, dir: -1 | 1) => {
     setOngRanking(prev => {
       const next = [...prev];
-      const target = idx + dir;
-      if (target < 0 || target >= next.length) return prev;
-      [next[idx], next[target]] = [next[target], next[idx]];
+      const t = idx + dir;
+      if (t < 0 || t >= next.length) return prev;
+      [next[idx], next[t]] = [next[t], next[idx]];
       return next;
     });
   }, []);
-
-  // ── Submit ─────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
     if (!promo || projectRanking.length === 0) return;
@@ -476,11 +434,8 @@ export default function JeVotePage() {
         body: JSON.stringify({ projectRanking, ongRanking }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setStep("success");
-      } else {
-        setSubmitError(data.error ?? "Une erreur est survenue.");
-      }
+      if (res.ok && data.success) setStep("success");
+      else setSubmitError(data.error ?? "Une erreur est survenue.");
     } catch {
       setSubmitError("Erreur réseau. Veuillez réessayer.");
     } finally {
@@ -488,145 +443,182 @@ export default function JeVotePage() {
     }
   };
 
-  // ── Derived values ─────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
 
-  const weights = getWeights(promo);
-  const maxProjects = getMaxProjects(promo);
+  const weights      = getWeights(promo);
+  const maxProjects  = getMaxProjects(promo);
+  const totalVoix    = weights.slice(0, projectRanking.length).reduce((a, b) => a + b, 0);
+  const maxVoix      = weights.reduce((a, b) => a + b, 0);
 
   const filteredProjets = projets.filter(p => {
-    const matchCat = categoryFilter === "tous" || p.category.toLowerCase().replace(/\s+/g, "") === categoryFilter;
-    const matchSearch =
-      !searchProjects ||
+    const cat = categories.find(c => c.id === categoryFilter);
+    const matchCat = categoryFilter === "tous" || p.category === cat?.label;
+    const matchSearch = !searchProjects ||
       p.name.toLowerCase().includes(searchProjects.toLowerCase()) ||
       p.asso.toLowerCase().includes(searchProjects.toLowerCase()) ||
-      p.pays.toLowerCase().includes(searchProjects.toLowerCase());
+      p.description.toLowerCase().includes(searchProjects.toLowerCase());
     return matchCat && matchSearch;
   });
 
   const filteredOngs = ongs.filter(o => {
     if (!searchOngs) return true;
     const q = searchOngs.toLowerCase();
-    return (
-      o.name.toLowerCase().includes(q) ||
+    return o.name.toLowerCase().includes(q) ||
       o.tagline.toLowerCase().includes(q) ||
-      o.domaines.some(d => d.toLowerCase().includes(q))
-    );
+      o.domaines.some(d => d.toLowerCase().includes(q));
   });
-
-  const totalVoix = weights.slice(0, projectRanking.length).reduce((a, b) => a + b, 0);
-  const maxVoix = weights.reduce((a, b) => a + b, 0);
-
-  // ── Error message mapping ──────────────────────────────────────────────
 
   const friendlyAuthError = (code: string) => {
     const map: Record<string, string> = {
       no_code: "Aucun code d'autorisation reçu.",
-      invalid_state: "Session expirée ou invalide. Réessayez.",
+      invalid_state: "Session expirée. Réessayez.",
       token_failed: "Échec de l'authentification ViaRézo.",
       userinfo_failed: "Impossible de récupérer vos informations.",
       no_sub: "Identifiant ViaRézo manquant.",
       server_error: "Erreur serveur. Réessayez dans quelques instants.",
       access_denied: "Accès refusé. Vous avez annulé la connexion.",
     };
-    return map[code] ?? `Erreur d'authentification (${code}).`;
+    return map[code] ?? `Erreur (${code})`;
   };
 
-  // ── Render helpers ─────────────────────────────────────────────────────
+  const promoLabel = (p: PromoType | null) =>
+    p === "P2027" ? "Ingénieur P2027" :
+    p === "P2028" ? "Ingénieur P2028" :
+    p === "P2029" ? "Ingénieur P2029" :
+    p === "Bachelor" ? "Bachelor" : "";
 
-  const renderStatusBar = () => {
-    if (voteStatus.status === "open") {
-      return (
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass mb-5">
-          <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />
-          <span className="text-xs font-semibold text-green-400 uppercase tracking-widest">
-            Votes ouverts · Fermeture dans {countdown}
-          </span>
-        </div>
-      );
-    }
-    if (voteStatus.status === "before") {
-      return (
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass mb-5">
-          <span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
-          <span className="text-xs font-semibold text-yellow-400 uppercase tracking-widest">
-            Ouverture dans {countdown}
-          </span>
-        </div>
-      );
-    }
-    return (
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass mb-5">
-        <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
-        <span className="text-xs font-semibold text-red-400 uppercase tracking-widest">
-          Votes clôturés
-        </span>
-      </div>
-    );
-  };
-
-  // ── Loading ────────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
 
   if (auth.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "rgba(37,99,235,0.3)", borderTopColor: "#2563EB" }} />
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Chargement…</p>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            border: "2px solid rgba(37,99,235,0.25)",
+            borderTopColor: "#2563EB",
+            animation: "spin 0.8s linear infinite",
+          }} />
+          <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>Chargement…</p>
         </div>
       </div>
     );
   }
 
-  // ── BEFORE window ──────────────────────────────────────────────────────
+  // ── BEFORE ────────────────────────────────────────────────────────────────
 
   if (step === "before") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="glass rounded-3xl max-w-md w-full p-8 sm:p-12 text-center">
-          <div className="text-5xl mb-5">⏳</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Bientôt disponible</h2>
-          <p className="text-sm mb-5" style={{ color: "var(--muted)" }}>
-            Les votes ouvriront le <strong className="text-white">28 avril 2026 à 17h30 CEST</strong>.
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
+
+          {/* Title */}
+          <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: "var(--teal)", marginBottom: 12 }}>
+            JDB 2026
           </p>
-          <div className="glass rounded-2xl p-4 mb-5">
-            <div className="text-3xl font-black text-white font-mono tracking-wider">{countdown}</div>
-            <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>avant l&apos;ouverture</p>
+          <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.8rem)", fontWeight: 900,
+            letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 8, lineHeight: 1.1 }}>
+            Les votes ouvrent dans…
+          </h1>
+          <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h30 CEST</strong> — Forum CentraleSupélec
+          </p>
+
+          {/* Countdown blocks */}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", alignItems: "flex-start", marginBottom: 44, flexWrap: "wrap" }}>
+            <CountdownBlock value={countdown.days}    label="Jours"    color="#2563EB" />
+            <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--border)", alignSelf: "center", marginBottom: 20 }}>:</div>
+            <CountdownBlock value={countdown.hours}   label="Heures"   color="#2ABFC4" />
+            <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--border)", alignSelf: "center", marginBottom: 20 }}>:</div>
+            <CountdownBlock value={countdown.minutes} label="Minutes"  color="#8b5cf6" />
+            <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "var(--border)", alignSelf: "center", marginBottom: 20 }}>:</div>
+            <CountdownBlock value={countdown.seconds} label="Secondes" color="#ec4899" />
           </div>
-          <p className="text-xs" style={{ color: "var(--muted)" }}>
-            Préparez vos choix en consultant les <a href="/projets" className="underline" style={{ color: "var(--blue-light)" }}>projets</a> et les <a href="/ong" className="underline" style={{ color: "var(--blue-light)" }}>ONGs</a>.
+
+          {/* Info card */}
+          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px", marginBottom: 24, textAlign: "left" }}>
+            <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "var(--teal)", marginBottom: 12 }}>
+              En attendant, préparez vos choix
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { icon: "🏆", text: "45 000 € de dotation à redistribuer entre les projets" },
+                { icon: "🌍", text: "5 000 € pour le pool ONG — votez pour 3 associations" },
+                { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par compte" },
+              ].map(({ icon, text }) => (
+                <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                  <p style={{ fontSize: "0.83rem", color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Links */}
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+              Découvrir les projets
+            </a>
+            <a href="/ong" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+              Voir les ONGs
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── CLOSED ────────────────────────────────────────────────────────────────
+
+  if (step === "closed") {
+    return (
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div className="glass" style={{ borderRadius: 28, padding: "48px 40px", maxWidth: 440, width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <h2 style={{ fontSize: "1.8rem", fontWeight: 900, color: "var(--text)", marginBottom: 10 }}>
+            Votes clôturés
+          </h2>
+          <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.6 }}>
+            La fenêtre de vote s&apos;est fermée le 28 avril 2026 à 21h00 CEST.
+            Merci à tous les participants&nbsp;!
           </p>
         </div>
       </div>
     );
   }
 
-  // ── BLOCKED — not eligible for online vote ─────────────────────────────
+  // ── BLOCKED ───────────────────────────────────────────────────────────────
 
   if (step === "blocked") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="glass rounded-3xl max-w-md w-full p-8 sm:p-12 text-center">
-          <div className="text-5xl mb-5">🏛️</div>
-          <h2 className="text-2xl sm:text-3xl font-black mb-3" style={{ color: "var(--text)" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div className="glass" style={{ borderRadius: 28, padding: "40px 32px", maxWidth: 440, width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>🏛️</div>
+          <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "var(--text)", marginBottom: 10 }}>
             Vote en présentiel
           </h2>
-          <p className="text-sm mb-4 leading-relaxed" style={{ color: "var(--muted)" }}>
+          <p style={{ fontSize: "0.88rem", color: "var(--muted)", marginBottom: 20, lineHeight: 1.65 }}>
             Bonjour <strong style={{ color: "var(--text)" }}>{auth.prenom}</strong> — votre promotion{" "}
             <strong style={{ color: "var(--blue-light)" }}>{auth.promo}</strong> vote{" "}
             <strong style={{ color: "var(--text)" }}>en présentiel</strong> uniquement.
           </p>
-          <div className="glass rounded-2xl p-4 mb-6 text-left">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Infos vote sur place</p>
-            <p className="text-sm" style={{ color: "var(--text)" }}>📍 Diagonale Eiffel</p>
-            <p className="text-sm" style={{ color: "var(--text)" }}>🕔 17h30 → 20h45</p>
-            <p className="text-sm" style={{ color: "var(--text)" }}>🪪 Carte étudiante obligatoire</p>
+          <div style={{ background: "rgba(42,191,196,0.07)", border: "1px solid rgba(42,191,196,0.2)",
+            borderRadius: 16, padding: "14px 18px", marginBottom: 22, textAlign: "left" }}>
+            <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
+              Infos vote sur place
+            </p>
+            {[["📍", "Diagonale Eiffel"], ["🕔", "17h30 → 20h45"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
+              <p key={txt} style={{ fontSize: "0.85rem", color: "var(--text)", marginBottom: 4 }}>{icon} {txt}</p>
+            ))}
           </div>
-          <div className="flex flex-col gap-3">
-            <a href="/projets" className="btn-primary !justify-center !py-3 !text-sm">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <a href="/projets" className="btn-primary" style={{ textAlign: "center", display: "block" }}>
               Découvrir les projets →
             </a>
-            <a href="/api/auth/logout" className="btn-ghost !text-sm !py-3 !px-6">
+            <a href="/api/auth/logout" className="btn-ghost" style={{ textAlign: "center", fontSize: "0.85rem" }}>
               Se déconnecter
             </a>
           </div>
@@ -635,393 +627,549 @@ export default function JeVotePage() {
     );
   }
 
-  // ── CLOSED window ──────────────────────────────────────────────────────
-
-  if (step === "closed") {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="glass rounded-3xl max-w-md w-full p-8 sm:p-12 text-center">
-          <div className="text-5xl mb-5">🔒</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Votes clôturés</h2>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            La fenêtre de vote s&apos;est fermée le 28 avril 2026 à 21h00 CEST. Merci à tous les participants !
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── ALREADY VOTED ──────────────────────────────────────────────────────
+  // ── ALREADY VOTED ─────────────────────────────────────────────────────────
 
   if (step === "already-voted") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="glass rounded-3xl max-w-md w-full p-8 sm:p-12 text-center">
-          <div className="text-5xl mb-5">✅</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Déjà voté !</h2>
-          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-            {auth.prenom ? `Bonjour ${auth.prenom} ! ` : ""}Votre vote a déjà été enregistré. Un seul vote par compte ViaRézo est autorisé.
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
+
+          {/* Confetti-ish glow ring */}
+          <div style={{ position: "relative", display: "inline-block", marginBottom: 24 }}>
+            <div style={{
+              width: 100, height: 100, borderRadius: "50%",
+              background: "linear-gradient(135deg, rgba(37,99,235,0.2), rgba(42,191,196,0.2))",
+              border: "2px solid rgba(42,191,196,0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 44,
+              boxShadow: "0 0 60px rgba(42,191,196,0.2)",
+            }}>
+              ✅
+            </div>
+          </div>
+
+          <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.4rem)", fontWeight: 900,
+            letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 8 }}>
+            Vote déjà enregistré
+          </h1>
+          <p style={{ fontSize: "0.95rem", color: "var(--muted)", marginBottom: 32, lineHeight: 1.65 }}>
+            {auth.prenom
+              ? <>Merci <strong style={{ color: "var(--text)" }}>{auth.prenom}</strong> — votre vote a bien été pris en compte.</>
+              : "Votre vote a bien été pris en compte."
+            }{" "}
+            Un seul vote est autorisé par compte ViaRézo.
           </p>
-          <a href="/api/auth/logout" className="btn-ghost !text-sm !py-3 !px-6">
-            Se déconnecter
-          </a>
+
+          {/* Status card */}
+          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px", marginBottom: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: "50%",
+                background: voteStatus === "open" ? "#4ade80" : voteStatus === "before" ? "#facc15" : "#f87171",
+                boxShadow: voteStatus === "open" ? "0 0 8px #4ade80" : "none",
+                animation: voteStatus === "open" ? "pulse 2s infinite" : "none",
+                flexShrink: 0,
+              }} />
+              <p style={{ fontSize: "0.85rem", color: "var(--text)", margin: 0, fontWeight: 600 }}>
+                {voteStatus === "open"
+                  ? `Votes ouverts — fermeture dans ${countdown.hours}h ${countdown.minutes}m`
+                  : voteStatus === "before"
+                  ? "Les votes ne sont pas encore ouverts"
+                  : "Les votes sont clôturés"}
+              </p>
+            </div>
+          </div>
+
+          {/* Info row */}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
+            {[
+              { icon: "🏆", label: "45 000 €", sub: "Dotation projets" },
+              { icon: "🌍", label: "5 000 €",  sub: "Pool ONG" },
+              { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
+            ].map(({ icon, label, sub }) => (
+              <div key={label} className="glass" style={{
+                borderRadius: 16, padding: "14px 18px", textAlign: "center", minWidth: 110,
+              }}>
+                <p style={{ fontSize: "1.2rem", marginBottom: 4 }}>{icon}</p>
+                <p style={{ fontSize: "0.92rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>{label}</p>
+                <p style={{ fontSize: "0.68rem", color: "var(--muted)", marginTop: 2 }}>{sub}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+              Voir les projets
+            </a>
+            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+              Se déconnecter
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ── SUCCESS ────────────────────────────────────────────────────────────
+  // ── SUCCESS ───────────────────────────────────────────────────────────────
 
   if (step === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="glass rounded-3xl max-w-lg w-full p-8 sm:p-12 text-center">
-          <div className="text-6xl mb-5 success-bounce inline-block">🎉</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">Vote enregistré !</h2>
-          <p className="text-sm mb-7" style={{ color: "var(--muted)" }}>
-            Merci{auth.prenom ? ` ${auth.prenom}` : ""} ! Votre vote a été pris en compte.
-          </p>
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={{ maxWidth: 540, width: "100%" }}>
 
-          {/* Projects summary */}
-          {projectRanking.length > 0 && (
-            <div className="mb-5 text-left">
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>
-                Projets votés
-              </p>
-              <div className="flex flex-col gap-2">
-                {projectRanking.map((id, i) => {
-                  const p = projets.find(x => x.id === id)!;
-                  return (
-                    <div key={id} className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: `${p.categoryColor}12`, border: `1px solid ${p.categoryColor}30` }}>
-                      <span className="text-lg">{p.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{p.name}</p>
-                        <p className="text-xs" style={{ color: "var(--muted)" }}>{p.asso}</p>
-                      </div>
-                      <span className="text-xs font-black flex-shrink-0" style={{ color: "#4890E8" }}>
-                        #{i + 1} · {weights[i]} pts
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Hero */}
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{
+              width: 90, height: 90, borderRadius: "50%", margin: "0 auto 20px",
+              background: "linear-gradient(135deg, rgba(37,99,235,0.25), rgba(42,191,196,0.25))",
+              border: "2px solid rgba(42,191,196,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 40,
+              boxShadow: "0 0 50px rgba(42,191,196,0.25)",
+              animation: "success-bounce 0.6s cubic-bezier(0.34,1.56,0.64,1)",
+            }}>
+              🎉
             </div>
-          )}
+            <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.4rem)", fontWeight: 900,
+              letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 8 }}>
+              Vote enregistré&nbsp;!
+            </h1>
+            <p style={{ fontSize: "0.95rem", color: "var(--muted)", lineHeight: 1.65 }}>
+              Merci{auth.prenom ? <> <strong style={{ color: "var(--text)" }}>{auth.prenom}</strong></> : ""} — votre vote a bien été pris en compte.
+            </p>
+          </div>
 
-          {/* ONGs summary */}
-          {ongRanking.length > 0 && (
-            <div className="mb-7 text-left">
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>
-                ONGs soutenues
-              </p>
-              <div className="flex flex-col gap-2">
-                {ongRanking.map((id, i) => {
-                  const o = ongs.find(x => x.id === id)!;
-                  return (
-                    <div key={id} className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: `${o.color}12`, border: `1px solid ${o.color}30` }}>
-                      <span className="text-lg">{o.logo}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">{o.name}</p>
-                        <p className="text-xs truncate" style={{ color: "var(--muted)" }}>{o.tagline}</p>
+          {/* Summary card */}
+          <div className="glass" style={{ borderRadius: 24, padding: "24px", marginBottom: 16 }}>
+
+            {/* Projects */}
+            {projectRanking.length > 0 && (
+              <div style={{ marginBottom: ongRanking.length > 0 ? 20 : 0 }}>
+                <p style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--blue-light)", marginBottom: 10 }}>
+                  ✦ Projets votés
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {projectRanking.map((id, i) => {
+                    const p = projets.find(x => x.id === id)!;
+                    return (
+                      <div key={id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                        borderRadius: 14,
+                        background: `${p.color}12`, border: `1px solid ${p.color}30`,
+                      }}>
+                        <span style={{
+                          width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.7rem", fontWeight: 900,
+                          background: `linear-gradient(135deg, ${p.color}80, ${p.color}40)`,
+                          color: "white",
+                        }}>{i + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {p.name}
+                          </p>
+                          <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{p.asso}</p>
+                        </div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#4890E8", flexShrink: 0 }}>
+                          {weights[i]} pts
+                        </span>
                       </div>
-                      <span className="text-xs font-black flex-shrink-0" style={{ color: "#2ABFC4" }}>
-                        #{i + 1} · {ONG_WEIGHTS[i]} pts
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="glass rounded-xl p-4 text-sm" style={{ color: "var(--muted)" }}>
-            <strong className="text-white">{totalVoix}</strong> voix distribuées sur {maxVoix} possible{maxVoix > 1 ? "s" : ""}
+            {/* Divider if both */}
+            {projectRanking.length > 0 && ongRanking.length > 0 && (
+              <div style={{ height: 1, background: "var(--border)", margin: "0 0 20px" }} />
+            )}
+
+            {/* ONGs */}
+            {ongRanking.length > 0 && (
+              <div>
+                <p style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
+                  🌍 ONGs soutenues
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {ongRanking.map((id, i) => {
+                    const o = ongs.find(x => x.id === id)!;
+                    return (
+                      <div key={id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                        borderRadius: 14,
+                        background: `${o.color}12`, border: `1px solid ${o.color}30`,
+                      }}>
+                        <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>{o.logo}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {o.name}
+                          </p>
+                          <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {o.tagline}
+                          </p>
+                        </div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#2ABFC4", flexShrink: 0 }}>
+                          {ONG_WEIGHTS[i]} pts
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Totals */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+            <div className="glass" style={{ flex: 1, borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em",
+                textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>Voix distribuées</p>
+              <p style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
+                <span style={{ color: "#4890E8" }}>{totalVoix}</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}> / {maxVoix}</span>
+              </p>
+            </div>
+            <div className="glass" style={{ flex: 1, borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em",
+                textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>Promotion</p>
+              <p style={{ fontSize: "1rem", fontWeight: 900, color: "var(--teal)", margin: 0 }}>
+                {promoLabel(promo)}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/projets" className="btn-primary" style={{ fontSize: "0.85rem" }}>
+              Voir tous les projets
+            </a>
+            <a href="/api/auth/logout" className="btn-ghost" style={{ fontSize: "0.85rem" }}>
+              Se déconnecter
+            </a>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── MAIN FLOW ──────────────────────────────────────────────────────────
+  // ── MAIN VOTING FLOW ──────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen py-10 sm:py-16">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+    <div style={{ minHeight: "100dvh", padding: "40px 20px 80px" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          {renderStatusBar()}
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 leading-tight">
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+
+          {/* Status pill */}
+          {voteStatus === "open" ? (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "6px 14px", borderRadius: 100,
+              background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)",
+              marginBottom: 16 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80",
+                boxShadow: "0 0 6px #4ade80", animation: "pulse 2s infinite" }} />
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "#4ade80" }}>
+                Votes ouverts · fermeture dans {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "6px 14px", borderRadius: 100,
+              background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.3)",
+              marginBottom: 16 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#facc15" }} />
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "#facc15" }}>
+                Ouverture dans {countdown.days}j {countdown.hours}h {countdown.minutes}m
+              </span>
+            </div>
+          )}
+
+          <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.8rem)", fontWeight: 900,
+            letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 8, lineHeight: 1.1 }}>
             <span className="gradient-text">Je Vote</span>
           </h1>
-          <p className="text-sm sm:text-base max-w-md mx-auto leading-relaxed" style={{ color: "var(--muted)" }}>
-            Classez vos projets préférés. Les votes sont pondérés et la dotation de{" "}
-            <span className="font-bold text-white">45 000 €</span> est répartie au pro-rata.
+          <p style={{ fontSize: "0.9rem", color: "var(--muted)", maxWidth: 420, margin: "0 auto", lineHeight: 1.65 }}>
+            Classez vos projets préférés. La dotation de{" "}
+            <strong style={{ color: "var(--text)" }}>45 000 €</strong> est répartie au pro-rata des voix.
           </p>
         </div>
 
-        {/* Auth error banner */}
+        {/* Auth error */}
         {authError && (
-          <div className="glass rounded-2xl p-4 mb-5 flex items-start gap-3"
-            style={{ border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)" }}>
-            <span className="text-red-400 text-lg flex-shrink-0">⚠</span>
-            <div>
-              <p className="text-sm font-bold text-red-400 mb-1">Erreur d&apos;authentification</p>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>{friendlyAuthError(authError)}</p>
+          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 16, padding: "12px 16px", marginBottom: 16,
+            display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <span style={{ color: "#f87171", fontSize: "1rem", flexShrink: 0 }}>⚠</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "0.82rem", fontWeight: 700, color: "#f87171", margin: "0 0 2px" }}>
+                Erreur d&apos;authentification
+              </p>
+              <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: 0 }}>
+                {friendlyAuthError(authError)}
+              </p>
             </div>
-            <button onClick={() => setAuthError(null)} className="ml-auto text-red-400 opacity-60 hover:opacity-100 text-sm">✕</button>
+            <button onClick={() => setAuthError(null)} style={{
+              background: "none", border: "none", cursor: "pointer", color: "#f87171", opacity: 0.6, fontSize: "0.85rem",
+            }}>✕</button>
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-          {/* ── STEP 1: Auth ─────────────────────────────────────────── */}
-          <div className="glass rounded-2xl p-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-                <StepBadge n={1} active={step === "auth" || !auth.authenticated} />
+          {/* ── STEP 1: Auth ────────────────────────────────────────────── */}
+          <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: auth.authenticated ? 10 : 14 }}>
+              <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
+                display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                <StepBadge n={1} active={!auth.authenticated} />
                 Connexion ViaRézo
               </h3>
               {auth.authenticated && (
-                <span className="text-xs px-2.5 py-1 rounded-full font-bold"
-                  style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 100,
+                  background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)" }}>
                   ✓ Connecté
                 </span>
               )}
             </div>
 
             {auth.authenticated ? (
-              <div className="flex items-center justify-between">
-                <p className="text-sm" style={{ color: "var(--muted)" }}>
-                  Bonjour <span className="font-bold text-white">{auth.prenom} {auth.nom}</span> 👋
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <p style={{ fontSize: "0.88rem", color: "var(--muted)", margin: 0 }}>
+                  Bonjour <strong style={{ color: "var(--text)" }}>{auth.prenom} {auth.nom}</strong> 👋
                 </p>
-                <a href="/api/auth/logout" className="text-xs underline" style={{ color: "var(--muted)" }}>
+                <a href="/api/auth/logout" style={{ fontSize: "0.78rem", color: "var(--muted)", textDecoration: "underline" }}>
                   Déconnexion
                 </a>
               </div>
             ) : (
-              <div>
-                <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
-                  Connectez-vous avec votre compte <strong className="text-white">ViaRézo</strong> pour voter. L&apos;identité garantit l&apos;unicité du vote (1 vote / compte).
+              <>
+                <p style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.6 }}>
+                  Connectez-vous avec votre compte <strong style={{ color: "var(--text)" }}>ViaRézo </strong> pour voter.
+                  L&apos;identité garantit l&apos;unicité du vote (1 vote / compte).
                 </p>
-                <a href="/api/auth/login"
-                  className="btn-primary !text-base !py-4 !px-8 w-full sm:w-auto text-center"
-                  style={{ display: "inline-flex", justifyContent: "center" }}>
-                  🔐 Se connecter via ViaRézo
+                <a href="/api/auth/login" className="btn-primary" style={{ display: "inline-flex", width: "100%", justifyContent: "center", padding: "14px" }}>
+                  <Image src="/logo-viarezo.png" alt="ViaRézo" width={22} height={22} style={{ borderRadius: 4, flexShrink: 0 }} />
+                  Se connecter
                 </a>
-              </div>
+              </>
             )}
           </div>
 
-          {/* ── STEP 2: Promo (auto-detected, read-only) ─────────────── */}
+          {/* ── Promo banner ────────────────────────────────────────────── */}
           {auth.authenticated && promo && promo !== "Other" && (
-            <div className="glass rounded-2xl p-4 sm:p-5 flex items-center gap-4"
-              style={{ border: "1px solid rgba(42,191,196,0.3)", background: "rgba(42,191,196,0.05)" }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(42,191,196,0.15)", border: "1px solid rgba(42,191,196,0.3)" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div style={{
+              borderRadius: 16, padding: "14px 18px",
+              display: "flex", alignItems: "center", gap: 12,
+              background: "rgba(42,191,196,0.06)", border: "1px solid rgba(42,191,196,0.28)",
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(42,191,196,0.15)", border: "1px solid rgba(42,191,196,0.3)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
               </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--teal)" }}>
+              <div>
+                <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--teal)", margin: 0, marginBottom: 2 }}>
                   Promotion détectée via ViaRézo
                 </p>
-                <p className="text-sm font-black" style={{ color: "var(--text)" }}>
-                  {promo === "P2027" ? "Ingénieur P2027" : promo === "P2028" ? "Ingénieur P2028" : promo === "P2029" ? "Ingénieur P2029" : "Bachelor"}
-                  <span className="ml-2 font-normal text-xs" style={{ color: "var(--muted)" }}>
-                    · {maxProjects} projets max · {getWeights(promo).join("+")} = {getWeights(promo).reduce((a,b)=>a+b,0)} voix
+                <p style={{ fontSize: "0.88rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
+                  {promoLabel(promo)}
+                  <span style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--muted)", marginLeft: 8 }}>
+                    · {maxProjects} projets max · {weights.join("+")} = {maxVoix} voix
                   </span>
                 </p>
               </div>
             </div>
           )}
 
-          {/* ── STEP 3: Projects ranking ──────────────────────────────── */}
+          {/* ── STEP 2: Projects ────────────────────────────────────────── */}
           {promo && promo !== "Other" && (
-            <div className="glass rounded-2xl p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-                  <StepBadge n={3} active={step === "projects"} />
+            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
+                  display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                  <StepBadge n={2} active={step === "projects"} />
                   Classez vos projets
                 </h3>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{
-                    background: projectRanking.length >= maxProjects ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
-                    color: projectRanking.length >= maxProjects ? "#4890E8" : "rgba(232,240,255,0.35)",
-                    border: `1px solid ${projectRanking.length >= maxProjects ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.07)"}`,
-                  }}>
+                <span style={{
+                  fontSize: "0.72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 100,
+                  background: projectRanking.length >= maxProjects ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
+                  color: projectRanking.length >= maxProjects ? "#4890E8" : "rgba(232,240,255,0.35)",
+                  border: `1px solid ${projectRanking.length >= maxProjects ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.07)"}`,
+                }}>
                   {projectRanking.length}/{maxProjects}
                 </span>
               </div>
-              <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
-                Cliquez sur un projet pour l&apos;ajouter à votre classement. Utilisez les flèches ▲▼ pour réordonner.
+              <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
+                Cliquez pour ajouter un projet à votre classement. Utilisez ▲▼ pour réordonner.
               </p>
 
-              {/* Current ranking slots */}
-              {maxProjects > 0 && (
-                <div className="mb-5">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>
-                    Votre classement
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {Array.from({ length: maxProjects }, (_, i) => (
-                      <RankSlot
-                        key={i}
-                        rank={i + 1}
-                        weight={weights[i]}
-                        projectId={projectRanking[i] ?? null}
-                        onRemove={() => removeProject(projectRanking[i])}
-                        onMoveUp={() => moveProject(i, -1)}
-                        onMoveDown={() => moveProject(i, 1)}
-                        canMoveUp={i > 0 && i < projectRanking.length}
-                        canMoveDown={i < projectRanking.length - 1}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Search & filter */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm" style={{ color: "var(--muted)" }}>🔍</span>
-                  <input
-                    type="text"
-                    placeholder="Rechercher un projet…"
-                    value={searchProjects}
-                    onChange={e => setSearchProjects(e.target.value)}
-                    className="input-field !pl-9"
-                  />
+              {/* Ranking slots */}
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
+                  Votre classement
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {Array.from({ length: maxProjects }, (_, i) => (
+                    <RankSlot key={i} rank={i + 1} weight={weights[i]}
+                      projectId={projectRanking[i] ?? null}
+                      onRemove={() => removeProject(projectRanking[i])}
+                      onMoveUp={() => moveProject(i, -1)}
+                      onMoveDown={() => moveProject(i, 1)}
+                      canMoveUp={i > 0 && i < projectRanking.length}
+                      canMoveDown={i < projectRanking.length - 1}
+                    />
+                  ))}
                 </div>
               </div>
 
-              {/* Category filters */}
-              <div className="flex gap-2 flex-wrap mb-4">
+              {/* Search */}
+              <div style={{ position: "relative", marginBottom: 10 }}>
+                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                  color: "var(--muted)", fontSize: "0.85rem", pointerEvents: "none" }}>🔍</span>
+                <input type="text" placeholder="Rechercher un projet…"
+                  value={searchProjects} onChange={e => setSearchProjects(e.target.value)}
+                  className="input-field" style={{ paddingLeft: 36 }} />
+              </div>
+
+              {/* Category pills */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                 {categories.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategoryFilter(cat.id)}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+                  <button key={cat.id} type="button" onClick={() => setCategoryFilter(cat.id)}
                     style={{
-                      background: categoryFilter === cat.id ? `${cat.color}25` : "rgba(255,255,255,0.04)",
-                      color: categoryFilter === cat.id ? cat.color : "rgba(232,240,255,0.45)",
-                      border: `1px solid ${categoryFilter === cat.id ? cat.color + "50" : "rgba(255,255,255,0.07)"}`,
-                    }}
-                  >
+                      padding: "5px 12px", borderRadius: 100, fontSize: "0.72rem", fontWeight: 700,
+                      cursor: "pointer", border: "1px solid", transition: "all 0.15s",
+                      background: categoryFilter === cat.id ? `${cat.color}22` : "transparent",
+                      color: categoryFilter === cat.id ? cat.color : "var(--muted)",
+                      borderColor: categoryFilter === cat.id ? `${cat.color}55` : "var(--border)",
+                    }}>
                     {cat.label}
                   </button>
                 ))}
               </div>
 
               {/* Project list */}
-              <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-0.5"
-                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(37,99,235,0.4) transparent" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6,
+                maxHeight: 340, overflowY: "auto", paddingRight: 2,
+                scrollbarWidth: "thin", scrollbarColor: "rgba(37,99,235,0.4) transparent" } as CSSProperties}>
                 {filteredProjets.map(p => {
-                  const isInRanking = projectRanking.includes(p.id);
+                  const isIn = projectRanking.includes(p.id);
                   const rank = projectRanking.indexOf(p.id);
-                  const isDisabled = !isInRanking && projectRanking.length >= maxProjects;
-
+                  const disabled = !isIn && projectRanking.length >= maxProjects;
                   return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => isInRanking ? removeProject(p.id) : addProject(p.id)}
-                      disabled={isDisabled}
-                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl text-left transition-all duration-200 w-full"
+                    <button key={p.id} type="button"
+                      onClick={() => isIn ? removeProject(p.id) : addProject(p.id)}
+                      disabled={disabled}
                       style={{
-                        background: isInRanking ? `${p.categoryColor}12` : "rgba(255,255,255,0.025)",
-                        border: `1px solid ${isInRanking ? p.categoryColor + "45" : "rgba(255,255,255,0.06)"}`,
-                        opacity: isDisabled ? 0.35 : 1,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                        style={{ background: `${p.categoryColor}20` }}>
-                        {p.emoji}
+                        display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                        borderRadius: 14, textAlign: "left", width: "100%", border: "1px solid",
+                        transition: "all 0.18s", cursor: disabled ? "not-allowed" : "pointer",
+                        background: isIn ? `${p.color}12` : "rgba(255,255,255,0.025)",
+                        borderColor: isIn ? `${p.color}45` : "rgba(255,255,255,0.06)",
+                        opacity: disabled ? 0.35 : 1,
+                      }}>
+                      {/* Color swatch */}
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: `${p.color}22`, border: `1px solid ${p.color}35`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: p.color }} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <span className="font-bold text-white text-sm">{p.name}</span>
-                          <span className="badge hidden sm:inline-flex"
-                            style={{ background: `${p.categoryColor}18`, color: p.categoryColor }}>
-                            {p.category}
-                          </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 2 }}>
+                          <span style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.88rem" }}>{p.name}</span>
+                          {p.vital && <span style={{ fontSize: "0.7rem" }}>❤️</span>}
+                          <span style={{
+                            fontSize: "0.62rem", fontWeight: 700, padding: "2px 7px", borderRadius: 100,
+                            background: `${p.color}18`, color: p.color,
+                          }}>{p.category}</span>
                         </div>
-                        <p className="text-xs truncate" style={{ color: "var(--muted)" }}>
-                          {p.asso} · {p.pays} · {p.montant.toLocaleString("fr-FR")} €
+                        <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>
+                          {p.asso}{p.montant > 0 ? ` · ${p.montant.toLocaleString("fr-FR")} €` : ""}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {isInRanking && (
-                          <span className="text-xs font-black" style={{ color: "#4890E8" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {isIn && (
+                          <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#4890E8" }}>
                             #{rank + 1}
                           </span>
                         )}
-                        <div
-                          className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs transition-all"
-                          style={isInRanking
-                            ? { background: p.categoryColor, borderColor: p.categoryColor, color: "white" }
-                            : { borderColor: "rgba(255,255,255,0.15)" }}>
-                          {isInRanking ? "✓" : "+"}
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%", border: "2px solid",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.7rem", transition: "all 0.15s",
+                          background: isIn ? p.color : "transparent",
+                          borderColor: isIn ? p.color : "rgba(255,255,255,0.2)",
+                          color: isIn ? "white" : "var(--muted)",
+                        }}>
+                          {isIn ? "✓" : "+"}
                         </div>
                       </div>
                     </button>
                   );
                 })}
                 {filteredProjets.length === 0 && (
-                  <p className="text-center py-8 text-sm" style={{ color: "var(--muted)" }}>
+                  <p style={{ textAlign: "center", padding: "24px 0", fontSize: "0.85rem", color: "var(--muted)" }}>
                     Aucun projet trouvé
                   </p>
                 )}
               </div>
 
               {projectRanking.length > 0 && step === "projects" && (
-                <button
-                  type="button"
-                  onClick={() => setStep("ong")}
-                  className="btn-primary mt-4 w-full !justify-center !py-3 !text-sm"
-                >
+                <button type="button" onClick={() => setStep("ong")} className="btn-primary"
+                  style={{ marginTop: 16, width: "100%", justifyContent: "center", padding: "13px" }}>
                   Continuer vers les ONGs →
                 </button>
               )}
             </div>
           )}
 
-          {/* ── STEP 4: ONG ranking ───────────────────────────────────── */}
-          {promo && promo !== "Other" && (step === "ong" || step === "confirm" || step === "success") && (
-            <div className="glass rounded-2xl p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
-                  <StepBadge n={4} active={step === "ong"} />
-                  ONG à soutenir{" "}
-                  <span className="text-xs font-normal" style={{ color: "var(--muted)" }}>(optionnel)</span>
+          {/* ── STEP 3: ONGs ────────────────────────────────────────────── */}
+          {promo && promo !== "Other" && (step === "ong" || step === "confirm") && (
+            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
+                  display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                  <StepBadge n={3} active={step === "ong"} />
+                  ONGs à soutenir
+                  <span style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--muted)" }}>(optionnel)</span>
                 </h3>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{
-                    background: ongRanking.length >= 3 ? "rgba(42,191,196,0.2)" : "rgba(255,255,255,0.05)",
-                    color: ongRanking.length >= 3 ? "#2ABFC4" : "rgba(232,240,255,0.35)",
-                    border: `1px solid ${ongRanking.length >= 3 ? "rgba(42,191,196,0.4)" : "rgba(255,255,255,0.07)"}`,
-                  }}>
+                <span style={{
+                  fontSize: "0.72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 100,
+                  background: ongRanking.length >= 3 ? "rgba(42,191,196,0.2)" : "rgba(255,255,255,0.05)",
+                  color: ongRanking.length >= 3 ? "#2ABFC4" : "rgba(232,240,255,0.35)",
+                  border: `1px solid ${ongRanking.length >= 3 ? "rgba(42,191,196,0.4)" : "rgba(255,255,255,0.07)"}`,
+                }}>
                   {ongRanking.length}/3
                 </span>
               </div>
-              <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
-                Vote ONG séparé — classez jusqu&apos;à 3 ONGs. Poids : {ONG_WEIGHTS.join(", ")} pts. Pool indépendant des projets.
+              <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
+                Pool ONG séparé — classez jusqu&apos;à 3 ONGs. Poids : {ONG_WEIGHTS.join(", ")} pts.
               </p>
 
               {/* ONG ranking slots */}
-              <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
                   Votre classement ONGs
                 </p>
-                <div className="flex flex-col gap-2">
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {Array.from({ length: 3 }, (_, i) => (
-                    <OngSlot
-                      key={i}
-                      rank={i + 1}
-                      weight={ONG_WEIGHTS[i]}
+                    <OngSlot key={i} rank={i + 1} weight={ONG_WEIGHTS[i]}
                       ongId={ongRanking[i] ?? null}
                       onRemove={() => removeOng(ongRanking[i])}
                       onMoveUp={() => moveOng(i, -1)}
@@ -1034,95 +1182,84 @@ export default function JeVotePage() {
               </div>
 
               {/* ONG search */}
-              <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm" style={{ color: "var(--muted)" }}>🔍</span>
-                <input
-                  type="text"
-                  placeholder="Rechercher une ONG…"
-                  value={searchOngs}
-                  onChange={e => setSearchOngs(e.target.value)}
-                  className="input-field !pl-9"
-                />
+              <div style={{ position: "relative", marginBottom: 12 }}>
+                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+                  color: "var(--muted)", fontSize: "0.85rem", pointerEvents: "none" }}>🔍</span>
+                <input type="text" placeholder="Rechercher une ONG…"
+                  value={searchOngs} onChange={e => setSearchOngs(e.target.value)}
+                  className="input-field" style={{ paddingLeft: 36 }} />
               </div>
 
               {/* ONG list */}
-              <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-0.5"
-                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(42,191,196,0.4) transparent" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6,
+                maxHeight: 340, overflowY: "auto", paddingRight: 2,
+                scrollbarWidth: "thin", scrollbarColor: "rgba(42,191,196,0.4) transparent" } as CSSProperties}>
                 {filteredOngs.map(o => {
-                  const isInRanking = ongRanking.includes(o.id);
+                  const isIn = ongRanking.includes(o.id);
                   const rank = ongRanking.indexOf(o.id);
-                  const isDisabled = !isInRanking && ongRanking.length >= 3;
-
+                  const disabled = !isIn && ongRanking.length >= 3;
                   return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      onClick={() => isInRanking ? removeOng(o.id) : addOng(o.id)}
-                      disabled={isDisabled}
-                      className="flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 w-full"
+                    <button key={o.id} type="button"
+                      onClick={() => isIn ? removeOng(o.id) : addOng(o.id)}
+                      disabled={disabled}
                       style={{
-                        background: isInRanking ? `${o.color}10` : "rgba(255,255,255,0.025)",
-                        border: `1px solid ${isInRanking ? o.color + "40" : "rgba(255,255,255,0.06)"}`,
-                        opacity: isDisabled ? 0.35 : 1,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                        style={{ background: `${o.color}20` }}>
-                        {o.logo}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-bold text-white text-sm">{o.name}</span>
-                        </div>
-                        <p className="text-xs truncate" style={{ color: "var(--muted)" }}>{o.tagline}</p>
-                        <div className="flex gap-1.5 flex-wrap mt-1">
+                        display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                        borderRadius: 14, textAlign: "left", width: "100%", border: "1px solid",
+                        transition: "all 0.18s", cursor: disabled ? "not-allowed" : "pointer",
+                        background: isIn ? `${o.color}10` : "rgba(255,255,255,0.025)",
+                        borderColor: isIn ? `${o.color}40` : "rgba(255,255,255,0.06)",
+                        opacity: disabled ? 0.35 : 1,
+                      }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: `${o.color}20`, display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "1.1rem",
+                      }}>{o.logo}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.88rem", margin: "0 0 2px",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {o.name}
+                        </p>
+                        <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {o.tagline}
+                        </p>
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
                           {o.domaines.slice(0, 2).map(d => (
-                            <span key={d} className="text-xs px-2 py-0.5 rounded-full"
-                              style={{ background: `${o.color}15`, color: o.color }}>
-                              {d}
-                            </span>
+                            <span key={d} style={{ fontSize: "0.6rem", padding: "2px 6px", borderRadius: 100,
+                              background: `${o.color}15`, color: o.color }}>{d}</span>
                           ))}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {isInRanking && (
-                          <span className="text-xs font-black" style={{ color: "#2ABFC4" }}>
-                            #{rank + 1}
-                          </span>
-                        )}
-                        <div
-                          className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs transition-all"
-                          style={isInRanking
-                            ? { background: o.color, borderColor: o.color, color: "white" }
-                            : { borderColor: "rgba(255,255,255,0.15)" }}>
-                          {isInRanking ? "✓" : "+"}
-                        </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {isIn && <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#2ABFC4" }}>#{rank + 1}</span>}
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "50%", border: "2px solid",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.7rem", transition: "all 0.15s",
+                          background: isIn ? o.color : "transparent",
+                          borderColor: isIn ? o.color : "rgba(255,255,255,0.2)",
+                          color: isIn ? "white" : "var(--muted)",
+                        }}>{isIn ? "✓" : "+"}</div>
                       </div>
                     </button>
                   );
                 })}
                 {filteredOngs.length === 0 && (
-                  <p className="text-center py-8 text-sm" style={{ color: "var(--muted)" }}>
+                  <p style={{ textAlign: "center", padding: "24px 0", fontSize: "0.85rem", color: "var(--muted)" }}>
                     Aucune ONG trouvée
                   </p>
                 )}
               </div>
 
               {step === "ong" && (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setStep("projects")}
-                    className="btn-ghost !text-sm !py-3 !px-5 flex-shrink-0"
-                  >
+                <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                  <button type="button" onClick={() => setStep("projects")} className="btn-ghost"
+                    style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem" }}>
                     ← Retour
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep("confirm")}
-                    className="btn-primary flex-1 !justify-center !py-3 !text-sm"
-                  >
+                  <button type="button" onClick={() => setStep("confirm")} className="btn-primary"
+                    style={{ flex: 1, justifyContent: "center", padding: "11px" }}>
                     Confirmer mon vote →
                   </button>
                 </div>
@@ -1130,117 +1267,122 @@ export default function JeVotePage() {
             </div>
           )}
 
-          {/* ── STEP 5: Confirm ───────────────────────────────────────── */}
-          {(step === "confirm") && promo && promo !== "Other" && (
-            <div className="glass rounded-2xl p-5 sm:p-6">
-              <h3 className="font-bold text-white flex items-center gap-2 text-sm sm:text-base mb-4">
-                <StepBadge n={5} active={step === "confirm"} />
+          {/* ── STEP 4: Confirm ─────────────────────────────────────────── */}
+          {step === "confirm" && promo && promo !== "Other" && (
+            <div className="glass" style={{ borderRadius: 20, padding: "20px 24px" }}>
+              <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
+                display: "flex", alignItems: "center", gap: 8, margin: "0 0 16px" }}>
+                <StepBadge n={4} active />
                 Confirmer et soumettre
               </h3>
 
-              {/* Summary */}
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                <div className="p-4 rounded-xl" style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#4890E8" }}>
+              {/* Summary grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                <div style={{ padding: "14px 16px", borderRadius: 14,
+                  background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.2)" }}>
+                  <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#4890E8", margin: "0 0 10px" }}>
                     Projets ({projectRanking.length}/{maxProjects})
                   </p>
                   {projectRanking.length > 0 ? (
-                    <div className="flex flex-col gap-1.5">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {projectRanking.map((id, i) => {
                         const p = projets.find(x => x.id === id)!;
                         return (
-                          <div key={id} className="flex items-center gap-2 text-sm">
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-                              style={{ background: `${p.categoryColor}30`, color: p.categoryColor }}>
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: "0.6rem", fontWeight: 900,
+                              background: `${p.color}30`, color: p.color }}>
                               {i + 1}
                             </span>
-                            <span className="flex-1 font-semibold text-white text-xs truncate">{p.name}</span>
-                            <span className="text-xs font-bold" style={{ color: "#4890E8" }}>{weights[i]}pts</span>
+                            <span style={{ flex: 1, fontSize: "0.78rem", fontWeight: 700, color: "var(--text)",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {p.name}
+                            </span>
+                            <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#4890E8", flexShrink: 0 }}>
+                              {weights[i]}pts
+                            </span>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>Aucun projet</p>
+                    <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: 0 }}>Aucun projet</p>
                   )}
                 </div>
-
-                <div className="p-4 rounded-xl" style={{ background: "rgba(42,191,196,0.08)", border: "1px solid rgba(42,191,196,0.2)" }}>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#2ABFC4" }}>
+                <div style={{ padding: "14px 16px", borderRadius: 14,
+                  background: "rgba(42,191,196,0.07)", border: "1px solid rgba(42,191,196,0.2)" }}>
+                  <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: "#2ABFC4", margin: "0 0 10px" }}>
                     ONGs ({ongRanking.length}/3)
                   </p>
                   {ongRanking.length > 0 ? (
-                    <div className="flex flex-col gap-1.5">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {ongRanking.map((id, i) => {
                         const o = ongs.find(x => x.id === id)!;
                         return (
-                          <div key={id} className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
-                              style={{ background: `${o.color}30`, color: o.color }}>
-                              {i + 1}
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>{o.logo}</span>
+                            <span style={{ flex: 1, fontSize: "0.78rem", fontWeight: 700, color: "var(--text)",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {o.name}
                             </span>
-                            <span className="flex-1 font-semibold text-white text-xs truncate">{o.name}</span>
-                            <span className="text-xs font-bold" style={{ color: "#2ABFC4" }}>{ONG_WEIGHTS[i]}pts</span>
+                            <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2ABFC4", flexShrink: 0 }}>
+                              {ONG_WEIGHTS[i]}pts
+                            </span>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs" style={{ color: "var(--muted)" }}>Vote ONG non effectué</p>
+                    <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: 0 }}>Non renseigné</p>
                   )}
                 </div>
               </div>
 
-              {/* Voix count */}
-              <div className="p-3 rounded-xl mb-5 flex items-center justify-between"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <span className="text-xs" style={{ color: "var(--muted)" }}>Total voix projets</span>
-                <span className="text-sm font-black text-white">
-                  {totalVoix} / {maxVoix}
+              {/* Voix bar */}
+              <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 14,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>Voix distribuées</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: 900, color: "var(--text)" }}>
+                  <span style={{ color: "#4890E8" }}>{totalVoix}</span>
+                  <span style={{ color: "var(--muted)", fontWeight: 500 }}> / {maxVoix}</span>
                 </span>
               </div>
 
-              {/* Error */}
               {submitError && (
-                <div className="p-3 rounded-xl mb-4 text-sm"
-                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>
+                <div style={{ padding: "10px 14px", borderRadius: 12, marginBottom: 12,
+                  background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
+                  fontSize: "0.82rem", color: "#f87171" }}>
                   ⚠ {submitError}
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setStep("ong")}
-                  disabled={submitting}
-                  className="btn-ghost !text-sm !py-3 !px-5 flex-shrink-0"
-                >
+              <div style={{ display: "flex", gap: 10 }}>
+                <button type="button" onClick={() => setStep("ong")} disabled={submitting}
+                  className="btn-ghost" style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem" }}>
                   ← Modifier
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
+                <button type="button" onClick={handleSubmit}
                   disabled={submitting || projectRanking.length === 0}
-                  className="btn-primary flex-1 !justify-center !py-4 !text-base"
+                  className="btn-primary"
                   style={{
+                    flex: 1, justifyContent: "center", padding: "13px",
                     opacity: (submitting || projectRanking.length === 0) ? 0.5 : 1,
                     cursor: (submitting || projectRanking.length === 0) ? "not-allowed" : "pointer",
-                  }}
-                >
+                  }}>
                   {submitting ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Envoi…
-                    </>
-                  ) : (
-                    "✦ Valider mon vote définitivement"
-                  )}
+                    <><span style={{ width: 14, height: 14, borderRadius: "50%",
+                      border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white",
+                      animation: "spin 0.8s linear infinite", display: "inline-block" }} />
+                    Envoi…</>
+                  ) : "✦ Valider mon vote définitivement"}
                 </button>
               </div>
-
-              <p className="text-center text-xs mt-3" style={{ color: "var(--muted)" }}>
-                Vote sécurisé · Identité vérifiée via ViaRézo · 1 vote par compte · Irrévocable
+              <p style={{ textAlign: "center", fontSize: "0.72rem", color: "var(--muted)", marginTop: 10 }}>
+                Vote sécurisé · Identité vérifiée · 1 vote par compte · Irrévocable
               </p>
             </div>
           )}

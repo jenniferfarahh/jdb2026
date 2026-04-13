@@ -1,92 +1,127 @@
 import Link from "next/link";
 import { ongs } from "@/data/ong";
 
+export const metadata = {
+  title: "ONG Partenaires — JDB 2026",
+  description: "Les 9 ONG partenaires de la Journée des Bourses 2026.",
+};
+
 export default function ONGPage() {
   return (
-    <div className="min-h-screen py-10 sm:py-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div style={{ minHeight: "100dvh", padding: "48px 20px 80px" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
 
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-14">
-          <p className="section-label mb-3">Partenaires</p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight">
+        {/* ── Header ── */}
+        <div style={{ textAlign: "center", marginBottom: 52 }}>
+          <p style={{
+            fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
+            textTransform: "uppercase", color: "var(--teal)", marginBottom: 12,
+          }}>
+            Partenaires
+          </p>
+          <h1 style={{
+            fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 900,
+            letterSpacing: "-0.02em", lineHeight: 1.1,
+            color: "var(--text)", marginBottom: 14,
+          }}>
             Les <span className="gradient-text">ONG</span>
           </h1>
-          <p className="text-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+          <p style={{
+            fontSize: "clamp(0.9rem, 2vw, 1rem)", color: "var(--muted)",
+            maxWidth: 480, margin: "0 auto", lineHeight: 1.65,
+          }}>
             {ongs.length} organisations non-gouvernementales partenaires de la Journée des Bourses 2026.
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-xl mx-auto mb-12 sm:mb-16">
-          {[
-            { v: ongs.length, l: "ONG partenaires", i: "🤝" },
-            { v: "30+",       l: "Pays d'action",   i: "🌍" },
-            { v: "1.5M+",     l: "Bénéficiaires",   i: "❤️" },
-          ].map(({ v, l, i }) => (
-            <div key={l} className="glass p-4 sm:p-5 text-center">
-              <p className="text-xl sm:text-2xl mb-1">{i}</p>
-              <p className="text-lg sm:text-2xl font-black text-purple-400">{v}</p>
-              <p className="text-[11px] sm:text-xs text-muted mt-1 leading-snug">{l}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        {/* ── Cards grid ── */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))",
+          gap: 18,
+        }}>
           {ongs.map((ong) => (
-            <article key={ong.id} className="glass card-hover p-5 sm:p-6 flex flex-col gap-4">
-              {/* Header */}
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0"
-                  style={{ background: `${ong.color}18`, border: `1px solid ${ong.color}30` }}>
+            <div
+              key={ong.id}
+              className="glass card-hover"
+              style={{ borderRadius: 20, padding: "22px 22px 20px", display: "flex", flexDirection: "column", gap: 14 }}
+            >
+              {/* Top: icon + name */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 50, height: 50, borderRadius: 14, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 24,
+                  background: `${ong.color}18`,
+                  border: `1px solid ${ong.color}35`,
+                }}>
                   {ong.logo}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-black text-white text-lg sm:text-xl leading-snug">{ong.name}</h3>
-                  <p className="text-sm font-medium" style={{ color: ong.color }}>{ong.tagline}</p>
-                  <p className="text-xs text-muted mt-0.5">Fondée en {ong.fondee}</p>
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{
+                    fontSize: "0.98rem", fontWeight: 800,
+                    color: "var(--text)", lineHeight: 1.25, margin: 0,
+                  }}>
+                    {ong.name}
+                  </h2>
+                  <p style={{
+                    fontSize: "0.78rem", fontWeight: 600, marginTop: 3,
+                    color: ong.color,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {ong.tagline}
+                  </p>
                 </div>
               </div>
 
-              {/* Description */}
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(232,232,255,0.5)" }}>{ong.description}</p>
+              {/* Divider */}
+              <div style={{ height: 1, background: "var(--border)" }} />
 
-              {/* Domaines */}
-              <div className="flex flex-wrap gap-1.5">
-                {ong.domaines.map(d => (
-                  <span key={d} className="badge"
-                    style={{ background: `${ong.color}15`, color: ong.color, border: `1px solid ${ong.color}30` }}>
+              {/* Description */}
+              <p style={{
+                fontSize: "0.84rem", lineHeight: 1.7,
+                color: "var(--muted)", margin: 0, flex: 1,
+              }}>
+                {ong.description}
+              </p>
+
+              {/* Domain badges */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+                {ong.domaines.map((d) => (
+                  <span key={d} style={{
+                    fontSize: "0.66rem", fontWeight: 700, letterSpacing: "0.05em",
+                    textTransform: "uppercase", padding: "3px 10px", borderRadius: 100,
+                    background: `${ong.color}15`,
+                    color: ong.color,
+                    border: `1px solid ${ong.color}30`,
+                  }}>
                     {d}
                   </span>
                 ))}
               </div>
-
-              {/* Meta */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <p className="text-[10px] text-muted uppercase tracking-wider mb-1">Bénéficiaires</p>
-                  <p className="text-sm font-black" style={{ color: ong.color }}>{ong.beneficiaires}</p>
-                </div>
-                <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <p className="text-[10px] text-muted uppercase tracking-wider mb-1">Zones</p>
-                  <p className="text-xs font-semibold text-white/65 leading-snug">
-                    {ong.pays.slice(0, 3).join(", ")}{ong.pays.length > 3 ? ` +${ong.pays.length - 3}` : ""}
-                  </p>
-                </div>
-              </div>
-            </article>
+            </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-16 sm:mt-20 glass rounded-3xl p-8 sm:p-12 text-center">
-          <p className="text-3xl sm:text-4xl mb-4">🌍</p>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Soutenez leurs projets</h2>
-          <p className="text-muted mb-7 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
-            Chaque vote compte. Aidez à redistribuer les 45 000 € aux associations gagnantes.
+        {/* ── CTA ── */}
+        <div className="glass" style={{
+          marginTop: 64, borderRadius: 24, padding: "40px 32px",
+          textAlign: "center",
+        }}>
+          <p style={{ fontSize: 36, marginBottom: 12 }}>🌍</p>
+          <h2 style={{
+            fontSize: "clamp(1.3rem, 3vw, 1.8rem)", fontWeight: 900,
+            color: "var(--text)", marginBottom: 10,
+          }}>
+            Soutenez leurs actions
+          </h2>
+          <p style={{
+            color: "var(--muted)", marginBottom: 24, maxWidth: 420,
+            margin: "0 auto 24px", lineHeight: 1.6, fontSize: "0.9rem",
+          }}>
+            Votez pour redistribuer les 5 000 € du pool ONG aux associations que vous soutenez.
           </p>
-          <Link href="/je-vote" className="btn-primary !py-3.5 !px-8 !text-base">
+          <Link href="/je-vote" className="btn-primary" style={{ fontSize: "1rem" }}>
             ✦ Voter maintenant
           </Link>
         </div>

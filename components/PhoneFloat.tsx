@@ -1,17 +1,56 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
+// ── Real data matching the actual vote form ────────────────────────────────────
 const PROJECTS = [
-  { name: "Solidarité Sahel",  org: "Humanitaire",     emoji: "🌍", c: "#2563EB" },
-  { name: "Code pour Tous",    org: "Tech & Éducation", emoji: "💻", c: "#4890E8" },
-  { name: "EcoInnov",          org: "Environnement",    emoji: "🌱", c: "#2ABFC4" },
-  { name: "MédiSol",           org: "Santé",            emoji: "🏥", c: "#1D9098" },
-  { name: "ArtSocial",         org: "Culture",          emoji: "🎨", c: "#4890E8" },
+  { id: "automatans-automathon", name: "Automathon",          asso: "Automatans", category: "Science & digital", color: "#FF8400", vital: false },
+  { id: "commus-catch-me",       name: "Catch Me If You Can", asso: "CommuS'",    category: "Art & events",      color: "#800080", vital: false },
 ];
 
-// Steps: 0=browse 1=select1 2=select2 3=confirm 4=success
-const STEP_DURATION = [2200, 1400, 1400, 2000, 2200];
+const ONGS = [
+  { id: "msf-gaza",      name: "MSF Gaza",     logo: "🏥", tagline: "Soigner sans frontières",       color: "#ef4444", domaines: ["Médical","Urgence"] },
+  { id: "sea-shepherd",  name: "Sea Shepherd",  logo: "🐋", tagline: "Défendre les océans",           color: "#0ea5e9", domaines: ["Environnement","Océans"] },
+  { id: "anne-lorient",  name: "Anne-Lorient",  logo: "🤝", tagline: "Solidarité locale et inter…",  color: "#3b82f6", domaines: ["Solidarité","Humanitaire"] },
+];
 
+const CATEGORIES = [
+  { id: "tous",       label: "Tous",             color: "#a855f7" },
+  { id: "science",    label: "Science & digital", color: "#6366f1" },
+  { id: "art",        label: "Art & events",      color: "#ec4899" },
+];
+
+const INGENIEUR_WEIGHTS = [5, 4, 3, 2, 1];
+const ONG_WEIGHTS = [3, 2, 1];
+
+// Steps: 0=splash 1=projects-empty 2=projects-filled 3=ongs 4=success
+const STEP_DURATION = [2600, 2000, 2200, 2400, 2800];
+
+// ── Tiny helpers ───────────────────────────────────────────────────────────────
+function RankDot({ n, filled, color }: { n: number; filled: boolean; color?: string }) {
+  return (
+    <span style={{
+      width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: "0.55rem", fontWeight: 900,
+      background: filled ? `linear-gradient(135deg,${color}90,${color}50)` : "rgba(255,255,255,0.06)",
+      color: filled ? "white" : "rgba(255,255,255,0.2)",
+    }}>{n}</span>
+  );
+}
+
+function WeightTag({ w, active }: { w: number; active: boolean }) {
+  return (
+    <span style={{
+      fontSize: "7px", fontWeight: 700, padding: "2px 5px", borderRadius: 100, flexShrink: 0,
+      background: active ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
+      color: active ? "#4890E8" : "rgba(255,255,255,0.25)",
+      border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.06)"}`,
+    }}>{w} pts</span>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function PhoneFloat() {
   const [step, setStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
@@ -28,9 +67,10 @@ export default function PhoneFloat() {
     <div className="flex flex-col items-center select-none">
       <div className="phone-float">
         <div
-          className="relative w-60 sm:w-64 rounded-[2.6rem] overflow-hidden"
+          className="relative rounded-[2.6rem] overflow-hidden"
           style={{
-            height: 510,
+            width: 248,
+            height: 516,
             background: "linear-gradient(165deg, #0D1535 0%, #060C20 100%)",
             border: "1.5px solid rgba(255,255,255,0.1)",
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 5px rgba(37,99,235,0.06), 0 40px 90px rgba(37,99,235,0.28)",
@@ -60,206 +100,602 @@ export default function PhoneFloat() {
             </div>
           </div>
 
-          {/* Screen content */}
+          {/* Screen */}
           <div className="absolute inset-0 flex flex-col" style={{ paddingTop: 28 }}>
 
-            {/* App Header — always visible */}
-            <div className="px-4 pt-2 pb-3 flex-shrink-0"
-              style={{ background: "linear-gradient(180deg,#0D1535 80%,transparent)" }}>
-              <div className="flex items-center justify-between mb-0.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black text-white"
-                    style={{ background: "linear-gradient(135deg,#2563EB,#2ABFC4)" }}>J</div>
-                  <span className="text-white text-[11px] font-bold">JDB 2026</span>
-                </div>
-                {/* Step indicator */}
-                <div className="flex gap-1">
-                  {[0,1,2,3,4].map(i => (
-                    <div key={i} className="h-1 rounded-full transition-all duration-500"
-                      style={{
-                        width: i === step ? 16 : 4,
-                        background: i === step ? "#2563EB" : "rgba(255,255,255,0.15)"
-                      }}/>
-                  ))}
-                </div>
-              </div>
-              <div className="text-[10px] text-white/40 font-medium">
-                {step === 0 && "Choisissez vos projets"}
-                {step === 1 && "Sélection en cours..."}
-                {step === 2 && "Encore un projet ?"}
-                {step === 3 && "Confirmez votre vote"}
-                {step === 4 && "Vote enregistré !"}
+            {/* ── App header ── */}
+            <div
+              className="px-3.5 pt-2 pb-2 flex-shrink-0 flex items-center justify-between"
+              style={{ background: "linear-gradient(180deg,#0D1535 85%,transparent)" }}
+            >
+              {/* Forum logo — always white on dark phone */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-forum.png"
+                alt="Forum CentraleSupélec"
+                width={26}
+                height={26}
+                style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }}
+              />
+
+              {/* Step dots */}
+              <div className="flex gap-1">
+                {[0,1,2,3,4].map(i => (
+                  <div key={i} className="h-1 rounded-full transition-all duration-500"
+                    style={{
+                      width: i === step ? 14 : 4,
+                      background: i === step ? "#2563EB" : "rgba(255,255,255,0.15)"
+                    }}/>
+                ))}
               </div>
             </div>
 
-            {/* Step content */}
-            <div className="flex-1 overflow-hidden relative px-4 pb-4">
+            {/* ── Content ── */}
+            <div className="flex-1 overflow-hidden relative px-3 pb-3" style={{ overflowY: "auto" }}>
 
-              {/* STEP 0 — Browse */}
+              {/* ════════════════ STEP 0 — JDB Splash ════════════════ */}
               {step === 0 && (
-                <div key={`browse-${animKey}`} className="step-in flex flex-col gap-2.5 h-full">
-                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5 mb-1"
-                    style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.18)" }}>
-                    <span className="text-white/30 text-xs">🔍</span>
-                    <span className="text-white/30 text-[10px]">Rechercher un projet...</span>
-                  </div>
-                  {PROJECTS.map((p, i) => (
-                    <div key={p.name}
-                      className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                      style={{
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        opacity: 1,
-                        transform: "translateY(0)",
-                        animation: `fadeInUp 0.4s ${i * 0.08}s ease-out both`,
-                      }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                        style={{ background: `${p.c}20` }}>{p.emoji}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-[10px] font-bold truncate">{p.name}</p>
-                        <p className="text-white/40 text-[9px]">{p.org}</p>
-                      </div>
-                      <div className="w-4 h-4 rounded-full border border-white/20 flex-shrink-0"/>
-                    </div>
+                <div key={`splash-${animKey}`} className="step-in flex flex-col items-center justify-center h-full gap-6">
+
+                  {/* Floating ambient particles */}
+                  {[
+                    { size: 5,  x: 22,  y: 60,  color: "#2563EB", delay: "0s",    dur: "3s"   },
+                    { size: 4,  x: 170, y: 40,  color: "#2ABFC4", delay: "0.5s",  dur: "2.5s" },
+                    { size: 3,  x: 190, y: 130, color: "#a855f7", delay: "1s",    dur: "3.5s" },
+                    { size: 3,  x: 30,  y: 150, color: "#2ABFC4", delay: "0.8s",  dur: "2.8s" },
+                  ].map((p, i) => (
+                    <div key={i} style={{
+                      position: "absolute", left: p.x, top: p.y,
+                      width: p.size, height: p.size, borderRadius: "50%",
+                      background: p.color, opacity: 0.5,
+                      boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+                      animation: `pulse ${p.dur} ${p.delay} ease-in-out infinite`,
+                      pointerEvents: "none",
+                    }} />
                   ))}
-                </div>
-              )}
 
-              {/* STEP 1 — Select first project */}
-              {step === 1 && (
-                <div key={`sel1-${animKey}`} className="step-in flex flex-col gap-2.5">
-                  {PROJECTS.map((p, i) => {
-                    const sel = i === 0;
-                    return (
-                      <div key={p.name}
-                        className="flex items-center gap-2.5 p-2.5 rounded-xl transition-all duration-500"
-                        style={{
-                          background: sel ? `${p.c}14` : "rgba(255,255,255,0.025)",
-                          border: `1px solid ${sel ? p.c + "45" : "rgba(255,255,255,0.06)"}`,
-                        }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                          style={{ background: `${p.c}20` }}>{p.emoji}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-[10px] font-bold truncate">{p.name}</p>
-                          <p className="text-white/40 text-[9px]">{p.org}</p>
-                        </div>
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] flex-shrink-0 ${sel ? "check-pop" : ""}`}
-                          style={sel
-                            ? { background: p.c, border: `1px solid ${p.c}`, color: "white" }
-                            : { border: "1px solid rgba(255,255,255,0.2)" }}>
-                          {sel ? "✓" : ""}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="mt-1 text-center">
-                    <span className="text-[9px] font-semibold px-3 py-1 rounded-full"
-                      style={{ background: "rgba(37,99,235,0.15)", color: "#6AABFF" }}>
-                      1/3 sélectionné
-                    </span>
-                  </div>
-                </div>
-              )}
+                  {/* Spinning outer ring */}
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 120, height: 120 }}>
+                    <div className="animate-spin" style={{
+                      position: "absolute", inset: 0, borderRadius: "50%",
+                      border: "1.5px solid transparent",
+                      borderTopColor: "#2563EB",
+                      borderBottomColor: "rgba(42,191,196,0.4)",
+                      animationDuration: "3s",
+                    }} />
+                    <div className="animate-spin" style={{
+                      position: "absolute", inset: 8, borderRadius: "50%",
+                      border: "1px solid transparent",
+                      borderTopColor: "rgba(168,85,247,0.5)",
+                      borderBottomColor: "rgba(37,99,235,0.3)",
+                      animationDuration: "2s",
+                      animationDirection: "reverse",
+                    }} />
 
-              {/* STEP 2 — Select second project */}
-              {step === 2 && (
-                <div key={`sel2-${animKey}`} className="step-in flex flex-col gap-2.5">
-                  {PROJECTS.map((p, i) => {
-                    const sel = i === 0 || i === 2;
-                    return (
-                      <div key={p.name}
-                        className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                        style={{
-                          background: sel ? `${p.c}14` : "rgba(255,255,255,0.025)",
-                          border: `1px solid ${sel ? p.c + "45" : "rgba(255,255,255,0.06)"}`,
-                        }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                          style={{ background: `${p.c}20` }}>{p.emoji}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-[10px] font-bold truncate">{p.name}</p>
-                          <p className="text-white/40 text-[9px]">{p.org}</p>
-                        </div>
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] flex-shrink-0 ${i === 2 ? "check-pop" : ""}`}
-                          style={sel
-                            ? { background: p.c, border: `1px solid ${p.c}`, color: "white" }
-                            : { border: "1px solid rgba(255,255,255,0.2)" }}>
-                          {sel ? "✓" : ""}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="mt-1 text-center">
-                    <span className="text-[9px] font-semibold px-3 py-1 rounded-full"
-                      style={{ background: "rgba(42,191,196,0.15)", color: "#2ABFC4" }}>
-                      2/3 sélectionnés
-                    </span>
-                  </div>
-                </div>
-              )}
+                    {/* Glow disc */}
+                    <div style={{
+                      position: "absolute", inset: 16, borderRadius: "50%",
+                      background: "radial-gradient(circle, rgba(37,99,235,0.22) 0%, rgba(42,191,196,0.1) 55%, transparent 100%)",
+                    }} />
 
-              {/* STEP 3 — Confirm */}
-              {step === 3 && (
-                <div key={`confirm-${animKey}`} className="step-in flex flex-col gap-3 h-full">
-                  <p className="text-[10px] text-white/50 font-medium">Vos 2 projets sélectionnés :</p>
-                  {[PROJECTS[0], PROJECTS[2]].map((p, i) => (
-                    <div key={p.name}
-                      className="flex items-center gap-2.5 p-3 rounded-2xl"
-                      style={{
-                        background: `${p.c}12`,
-                        border: `1px solid ${p.c}40`,
-                        animation: `fadeInUp 0.4s ${i * 0.15}s ease-out both`,
-                      }}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                        style={{ background: `${p.c}22` }}>{p.emoji}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-bold">{p.name}</p>
-                        <p className="text-white/40 text-[9px]">{p.org}</p>
-                      </div>
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                        style={{ background: p.c, color: "white" }}>✓</div>
+                    {/* J D B letters — each bounces in staggered */}
+                    <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "baseline", gap: 2 }}>
+                      {(["J","D","B"] as const).map((letter, i) => (
+                        <span key={letter} style={{
+                          fontSize: "2.2rem", fontWeight: 900, lineHeight: 1,
+                          letterSpacing: "-0.04em", display: "block",
+                          background:
+                            i === 0 ? "linear-gradient(160deg,#93c5fd,#2563EB)" :
+                            i === 1 ? "linear-gradient(160deg,#5eead4,#2ABFC4)" :
+                                      "linear-gradient(160deg,#d8b4fe,#a855f7)",
+                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                          filter:
+                            i === 0 ? "drop-shadow(0 0 10px rgba(37,99,235,0.7))" :
+                            i === 1 ? "drop-shadow(0 0 10px rgba(42,191,196,0.7))" :
+                                      "drop-shadow(0 0 10px rgba(168,85,247,0.7))",
+                          animation: `successBounce 0.55s ${i * 0.13}s cubic-bezier(0.34,1.56,0.64,1) both`,
+                        }}>{letter}</span>
+                      ))}
                     </div>
-                  ))}
-                  <div className="mt-auto">
-                    <div className="w-full py-3 rounded-2xl font-bold text-xs text-white flex items-center justify-center gap-2 animate-pulse"
-                      style={{ background: "linear-gradient(135deg,#2563EB,#2ABFC4)" }}>
-                      ✦ Confirmer mon vote
-                    </div>
-                    <p className="text-center text-[9px] text-white/25 mt-2">Vote anonyme · 1 vote par personne</p>
                   </div>
-                </div>
-              )}
 
-              {/* STEP 4 — Success */}
-              {step === 4 && (
-                <div key={`success-${animKey}`} className="step-in flex flex-col items-center justify-center h-full gap-4 pb-4">
-                  <div className="success-bounce w-20 h-20 rounded-full flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.25), rgba(42,191,196,0.25))", border: "2px solid rgba(42,191,196,0.5)" }}>
-                    <span className="text-4xl">✅</span>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white font-black text-base mb-1">Vote enregistré !</p>
-                    <p className="text-white/45 text-[10px] leading-relaxed">
-                      Merci ! Vos projets ont bien<br />été pris en compte.
+                  {/* 2026 + subtitle */}
+                  <div className="text-center" style={{ animation: "fadeInUp 0.5s 0.42s ease-out both" }}>
+                    {/* Year badge */}
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "4px 14px", borderRadius: 100, marginBottom: 8,
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                    }}>
+                      <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#2ABFC4",
+                        boxShadow: "0 0 6px #2ABFC4", animation: "pulse 2s infinite" }} />
+                      <span style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.18em",
+                        color: "rgba(255,255,255,0.75)" }}>2026</span>
+                      <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#2ABFC4",
+                        boxShadow: "0 0 6px #2ABFC4", animation: "pulse 2s 0.3s infinite" }} />
+                    </div>
+                    <p style={{ fontSize: "8px", color: "rgba(255,255,255,0.3)", fontWeight: 600,
+                      letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      Forum CentraleSupélec
                     </p>
                   </div>
-                  <div className="flex flex-col gap-1.5 w-full">
-                    {[PROJECTS[0], PROJECTS[2]].map(p => (
-                      <div key={p.name} className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                        style={{ background: `${p.c}10`, border: `1px solid ${p.c}30` }}>
-                        <span className="text-sm">{p.emoji}</span>
-                        <span className="text-[10px] font-semibold text-white/80">{p.name}</span>
-                        <span className="ml-auto text-green-400 text-xs">✓</span>
-                      </div>
+
+                  {/* Loading dots */}
+                  <div style={{ display: "flex", gap: 6, animation: "fadeInUp 0.4s 0.65s ease-out both" }}>
+                    {[
+                      { color: "#2563EB", delay: "0s"   },
+                      { color: "#2ABFC4", delay: "0.18s"},
+                      { color: "#a855f7", delay: "0.36s"},
+                    ].map((d, i) => (
+                      <div key={i} style={{
+                        width: 6, height: 6, borderRadius: "50%",
+                        background: d.color, boxShadow: `0 0 7px ${d.color}`,
+                        animation: `pulse 1.1s ${d.delay} ease-in-out infinite`,
+                      }} />
                     ))}
                   </div>
-                  <p className="text-[9px] text-white/20">Retour à la liste dans 2s...</p>
+                </div>
+              )}
+
+              {/* ════════════════ STEP 1 — Projects (empty) ════════════════ */}
+              {step === 1 && (
+                <div key={`proj-empty-${animKey}`} className="step-in flex flex-col gap-1.5 pb-2">
+
+                  {/* Status pill */}
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full self-start mb-0.5"
+                    style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80",
+                      boxShadow: "0 0 5px #4ade80", animation: "pulse 2s infinite", flexShrink: 0 }} />
+                    <span className="text-[7px] font-black text-green-400">VOTES OUVERTS</span>
+                  </div>
+
+                  {/* Step 1: Auth card — connected */}
+                  <div style={{ borderRadius: 10, padding: "8px 10px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "7px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>1</span>
+                        <span className="text-white text-[9px] font-black">Connexion ViaRézo</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.25)" }}>
+                        ✓ Connecté
+                      </span>
+                    </div>
+                    <p className="text-white/50 text-[8px]">Bonjour <strong className="text-white/80">Said le BG</strong> 👋</p>
+                  </div>
+
+                  {/* Promo banner */}
+                  <div style={{ borderRadius: 9, padding: "7px 10px",
+                    background: "rgba(42,191,196,0.06)", border: "1px solid rgba(42,191,196,0.28)",
+                    display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "rgba(42,191,196,0.15)", border: "1px solid rgba(42,191,196,0.3)", fontSize: "0.6rem" }}>✓</div>
+                    <div>
+                      <p className="text-[7px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Promotion détectée</p>
+                      <p className="text-white text-[8px] font-black">
+                        Ingénieur P2027
+                        <span className="text-white/40 font-normal"> · 5 projets · 5+4+3+2+1</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Projects card */}
+                  <div style={{ borderRadius: 10, padding: "8px 10px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "7px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>2</span>
+                        <span className="text-white text-[9px] font-black">Classez vos projets</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full text-white/30"
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        0/5
+                      </span>
+                    </div>
+
+                    {/* Rank slots — all empty */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      <p className="text-[7px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Votre classement</p>
+                      {[1,2,3,4,5].map(n => (
+                        <div key={n} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                          <RankDot n={n} filled={false} />
+                          <p className="text-[8px] flex-1" style={{ color: "rgba(255,255,255,0.18)" }}>
+                            Slot {n} — libre (optionnel)
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Category pills */}
+                    <div className="flex gap-1 flex-wrap mb-1.5">
+                      {CATEGORIES.map(c => (
+                        <span key={c.id} className="text-[7px] font-bold px-2 py-0.5 rounded-full"
+                          style={{
+                            background: c.id === "tous" ? `${c.color}22` : "transparent",
+                            color: c.id === "tous" ? c.color : "rgba(255,255,255,0.3)",
+                            border: `1px solid ${c.id === "tous" ? `${c.color}55` : "rgba(255,255,255,0.1)"}`,
+                          }}>{c.label}</span>
+                      ))}
+                    </div>
+
+                    {/* Project list */}
+                    <div className="flex flex-col gap-1">
+                      {PROJECTS.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                          style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                            background: `${p.color}22`, border: `1px solid ${p.color}35`,
+                            display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-[8px] font-black truncate">{p.name}</p>
+                            <p className="text-white/35 text-[7px]">{p.asso}</p>
+                          </div>
+                          <div style={{ width: 16, height: 16, borderRadius: "50%",
+                            border: "1.5px solid rgba(255,255,255,0.2)", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "8px", color: "rgba(255,255,255,0.3)" }}>+</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ════════════════ STEP 2 — Projects (Automathon filled) ════════════════ */}
+              {step === 2 && (
+                <div key={`proj-filled-${animKey}`} className="step-in flex flex-col gap-1.5 pb-2">
+
+                  {/* Status pill */}
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full self-start mb-0.5"
+                    style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80",
+                      boxShadow: "0 0 5px #4ade80", flexShrink: 0 }} />
+                    <span className="text-[7px] font-black text-green-400">VOTES OUVERTS</span>
+                  </div>
+
+                  {/* Auth card (collapsed) */}
+                  <div style={{ borderRadius: 10, padding: "6px 10px",
+                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "6px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>1</span>
+                        <span className="text-white/60 text-[8px] font-bold">Connexion ViaRézo</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" }}>
+                        ✓ Connecté
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Projects card */}
+                  <div style={{ borderRadius: 10, padding: "8px 10px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "7px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>2</span>
+                        <span className="text-white text-[9px] font-black">Classez vos projets</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(37,99,235,0.2)", color: "#4890E8", border: "1px solid rgba(37,99,235,0.4)" }}>
+                        1/5
+                      </span>
+                    </div>
+
+                    {/* Rank slots */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      <p className="text-[7px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Votre classement</p>
+
+                      {/* Slot 1 — filled */}
+                      <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                        style={{ background: `${PROJECTS[0].color}14`, border: `1px solid ${PROJECTS[0].color}45` }}>
+                        <RankDot n={1} filled color={PROJECTS[0].color} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: PROJECTS[0].color, flexShrink: 0 }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-[8px] font-black truncate">{PROJECTS[0].name}</p>
+                          <p className="text-white/35 text-[7px]">{PROJECTS[0].asso}</p>
+                        </div>
+                        <WeightTag w={5} active />
+                        <div className="flex flex-col gap-0.5 flex-shrink-0">
+                          <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.06)",
+                            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"5px",color:"var(--muted)" }}>▲</div>
+                          <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.06)",
+                            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"5px",color:"var(--muted)" }}>▼</div>
+                        </div>
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(239,68,68,0.18)",
+                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:"7px",color:"#ef4444",flexShrink:0 }}>✕</div>
+                      </div>
+
+                      {/* Slots 2-5 empty */}
+                      {[2,3,4,5].map(n => (
+                        <div key={n} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                          <RankDot n={n} filled={false} />
+                          <p className="text-[8px] flex-1" style={{ color: "rgba(255,255,255,0.15)" }}>Slot {n} — libre (optionnel)</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Category pills */}
+                    <div className="flex gap-1 flex-wrap mb-1.5">
+                      {CATEGORIES.map(c => (
+                        <span key={c.id} className="text-[7px] font-bold px-2 py-0.5 rounded-full"
+                          style={{
+                            background: c.id === "tous" ? `${c.color}22` : "transparent",
+                            color: c.id === "tous" ? c.color : "rgba(255,255,255,0.3)",
+                            border: `1px solid ${c.id === "tous" ? `${c.color}55` : "rgba(255,255,255,0.1)"}`,
+                          }}>{c.label}</span>
+                      ))}
+                    </div>
+
+                    {/* Project list */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      {PROJECTS.map((p, i) => {
+                        const isIn = i === 0;
+                        return (
+                          <div key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                            style={{
+                              background: isIn ? `${p.color}12` : "rgba(255,255,255,0.025)",
+                              border: `1px solid ${isIn ? p.color+"45" : "rgba(255,255,255,0.06)"}`,
+                            }}>
+                            <div style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                              background: `${p.color}22`, border: `1px solid ${p.color}35`,
+                              display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-[8px] font-black truncate">{p.name}</p>
+                              <p className="text-white/35 text-[7px]">{p.asso}</p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {isIn && <span className="text-[7px] font-black text-blue-400">#1</span>}
+                              <div style={{
+                                width: 16, height: 16, borderRadius: "50%", border: "1.5px solid",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: "7px",
+                                background: isIn ? p.color : "transparent",
+                                borderColor: isIn ? p.color : "rgba(255,255,255,0.2)",
+                                color: isIn ? "white" : "rgba(255,255,255,0.3)",
+                              }}>{isIn ? "✓" : "+"}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Continue button */}
+                    <div className="w-full py-2 rounded-xl font-black text-[9px] text-white flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg,#2563EB,#2ABFC4)", boxShadow: "0 3px 12px rgba(37,99,235,0.35)" }}>
+                      Continuer vers les ONGs →
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ════════════════ STEP 3 — ONGs ════════════════ */}
+              {step === 3 && (
+                <div key={`ong-${animKey}`} className="step-in flex flex-col gap-1.5 pb-2">
+
+                  {/* Status pill */}
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full self-start mb-0.5"
+                    style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80",
+                      boxShadow: "0 0 5px #4ade80", flexShrink: 0 }} />
+                    <span className="text-[7px] font-black text-green-400">VOTES OUVERTS</span>
+                  </div>
+
+                  {/* Auth card collapsed */}
+                  <div style={{ borderRadius: 10, padding: "6px 10px",
+                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "6px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>1</span>
+                        <span className="text-white/60 text-[8px] font-bold">Connexion ViaRézo</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" }}>
+                        ✓ Connecté
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Projects card collapsed */}
+                  <div style={{ borderRadius: 10, padding: "6px 10px",
+                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "6px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>2</span>
+                        <span className="text-white/60 text-[8px] font-bold">Classez vos projets</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(37,99,235,0.15)", color: "#4890E8", border: "1px solid rgba(37,99,235,0.3)" }}>
+                        1/5 ✓
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ONGs card */}
+                  <div style={{ borderRadius: 10, padding: "8px 10px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "7px", fontWeight: 900,
+                          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "white" }}>3</span>
+                        <span className="text-white text-[9px] font-black">ONGs à soutenir</span>
+                        <span className="text-white/30 text-[7px]">(optionnel)</span>
+                      </div>
+                      <span className="text-[7px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "rgba(42,191,196,0.2)", color: "#2ABFC4", border: "1px solid rgba(42,191,196,0.4)" }}>
+                        1/3
+                      </span>
+                    </div>
+
+                    {/* ONG rank slots */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      <p className="text-[7px] font-black text-teal-400 uppercase tracking-widest mb-0.5">Votre classement ONGs</p>
+
+                      {/* Slot 1 — MSF filled */}
+                      <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                        style={{ background: `${ONGS[0].color}14`, border: `1px solid ${ONGS[0].color}45` }}>
+                        <RankDot n={1} filled color={ONGS[0].color} />
+                        <div style={{ fontSize: "0.75rem", flexShrink: 0 }}>{ONGS[0].logo}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-[8px] font-black truncate">{ONGS[0].name}</p>
+                          <p className="text-white/35 text-[7px] truncate">{ONGS[0].tagline}</p>
+                        </div>
+                        <WeightTag w={3} active />
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(239,68,68,0.18)",
+                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:"7px",color:"#ef4444",flexShrink:0 }}>✕</div>
+                      </div>
+
+                      {/* Slots 2-3 empty */}
+                      {[2,3].map(n => (
+                        <div key={n} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                          <RankDot n={n} filled={false} />
+                          <p className="text-[8px] flex-1" style={{ color: "rgba(255,255,255,0.15)" }}>Slot {n} — libre (optionnel)</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ONG list */}
+                    <div className="flex flex-col gap-1 mb-2">
+                      {ONGS.map((o, i) => {
+                        const isIn = i === 0;
+                        return (
+                          <div key={o.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                            style={{
+                              background: isIn ? `${o.color}10` : "rgba(255,255,255,0.025)",
+                              border: `1px solid ${isIn ? o.color+"40" : "rgba(255,255,255,0.06)"}`,
+                            }}>
+                            <div style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                              background: `${o.color}20`, display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: "0.75rem" }}>{o.logo}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-[8px] font-black truncate">{o.name}</p>
+                              <p className="text-white/35 text-[7px] truncate">{o.tagline}</p>
+                              <div className="flex gap-1 mt-0.5">
+                                {o.domaines.slice(0,2).map(d => (
+                                  <span key={d} style={{ fontSize:"6px",padding:"1px 4px",borderRadius:100,background:`${o.color}15`,color:o.color }}>{d}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {isIn && <span className="text-[7px] font-black" style={{ color: "#2ABFC4" }}>#1</span>}
+                              <div style={{
+                                width: 16, height: 16, borderRadius: "50%", border: "1.5px solid",
+                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "7px",
+                                background: isIn ? o.color : "transparent",
+                                borderColor: isIn ? o.color : "rgba(255,255,255,0.2)",
+                                color: isIn ? "white" : "rgba(255,255,255,0.3)",
+                              }}>{isIn ? "✓" : "+"}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bottom buttons */}
+                    <div className="flex gap-1.5">
+                      <div className="py-2 px-3 rounded-xl font-black text-[8px] flex-shrink-0 flex items-center"
+                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
+                        ← Retour
+                      </div>
+                      <div className="flex-1 py-2 rounded-xl font-black text-[8px] text-white flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg,#2563EB,#2ABFC4)", boxShadow: "0 3px 10px rgba(37,99,235,0.35)" }}>
+                        Confirmer mon vote →
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ════════════════ STEP 4 — Success ════════════════ */}
+              {step === 4 && (
+                <div key={`success-${animKey}`} className="step-in flex flex-col items-center justify-center h-full gap-4 pb-2">
+                  <div style={{
+                    width: 62, height: 62, borderRadius: "50%",
+                    background: "linear-gradient(135deg,rgba(37,99,235,0.25),rgba(42,191,196,0.25))",
+                    border: "2px solid rgba(42,191,196,0.5)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 28, boxShadow: "0 0 38px rgba(42,191,196,0.25)",
+                  }}>🎉</div>
+
+                  <div className="text-center">
+                    <p className="text-white font-black text-sm mb-1">Vote enregistré !</p>
+                    <p className="text-white/40 text-[9px] leading-relaxed">
+                      Merci Said — vos choix ont bien<br/>été pris en compte.
+                    </p>
+                  </div>
+
+                  {/* Summary card */}
+                  <div className="w-full flex flex-col gap-1.5" style={{ borderRadius: 12, padding: "10px 12px",
+                    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <p className="text-[7px] font-black uppercase tracking-widest text-blue-400 mb-0.5">✦ Projets votés</p>
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                      style={{ background: `${PROJECTS[0].color}12`, border: `1px solid ${PROJECTS[0].color}30` }}>
+                      <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "6px", fontWeight: 900,
+                        background: `linear-gradient(135deg,${PROJECTS[0].color}80,${PROJECTS[0].color}40)`, color: "white" }}>1</span>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: PROJECTS[0].color, flexShrink: 0 }} />
+                      <span className="text-white text-[8px] font-black flex-1 truncate">{PROJECTS[0].name}</span>
+                      <span className="text-[7px] font-black text-blue-400">5 pts</span>
+                    </div>
+
+                    <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
+
+                    <p className="text-[7px] font-black uppercase tracking-widest text-teal-400 mb-0.5">🌍 ONGs soutenues</p>
+                    <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                      style={{ background: `${ONGS[0].color}10`, border: `1px solid ${ONGS[0].color}25` }}>
+                      <span style={{ fontSize: "0.75rem", flexShrink: 0 }}>{ONGS[0].logo}</span>
+                      <span className="text-white text-[8px] font-bold flex-1 truncate">{ONGS[0].name}</span>
+                      <span className="text-[7px] font-black" style={{ color: "#2ABFC4" }}>3 pts</span>
+                    </div>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="flex gap-2 w-full">
+                    <div className="flex-1 py-2 rounded-xl text-center"
+                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <p className="text-[6px] font-bold uppercase tracking-widest text-white/30 mb-0.5">Voix distribuées</p>
+                      <p className="text-white font-black text-[10px]"><span className="text-blue-400">5</span><span className="text-white/30">/15</span></p>
+                    </div>
+                    <div className="flex-1 py-2 rounded-xl text-center"
+                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <p className="text-[6px] font-bold uppercase tracking-widest text-white/30 mb-0.5">Promotion</p>
+                      <p className="text-teal-400 font-black text-[9px]">P2027</p>
+                    </div>
+                  </div>
+
+                  <p className="text-[7px] text-white/20">1 vote par compte · irrévocable</p>
                 </div>
               )}
 
             </div>
           </div>
 
-          {/* Home bar */}
+          {/* Home indicator */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-20 h-0.5 rounded-full bg-white/15" />
         </div>
       </div>
