@@ -253,10 +253,8 @@ export default function Navbar() {
   const [hydrated, setHydrated] = useState(false)
 
   const isHome = pathname === "/"
-  // Always show background — consistent style on all pages and screen sizes
-  const showBackground = true
+  const showBackground = scrolledOnHome || !isHome
 
-  // Only track scroll on homepage (kept for potential future use)
   useEffect(() => {
     if (!isHome) return
     function onScroll() { setScrolledOnHome(window.scrollY > 10) }
@@ -292,11 +290,11 @@ export default function Navbar() {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
           height: 64,
-          background: "var(--nav-bg)",
-          backdropFilter: "none",
-          WebkitBackdropFilter: "none",
-          borderBottom: "1px solid var(--border)",
-          transition: "none",
+          background: showBackground ? "var(--nav-bg)" : "transparent",
+          backdropFilter: showBackground ? "blur(20px)" : "none",
+          WebkitBackdropFilter: showBackground ? "blur(20px)" : "none",
+          borderBottom: `1px solid ${showBackground ? "var(--border)" : "transparent"}`,
+          transition: "background 0.3s ease, border-color 0.3s ease",
         }}
       >
         <div
