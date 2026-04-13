@@ -38,8 +38,8 @@ export const projets: Projet[] = [
     vital: false,
     color: "#FF8400",
     montant: 1000,
-    photoURL: "https://drive.google.com/uc?export=view&id=1rtUsL7fYBE1Pj6T3NPYOmoA_sd2YgQ_5",
-    logoURL:  "https://drive.google.com/uc?export=view&id=12edm3I8Y0LOPYi-2IiP8DWLicjEY1dej",
+    photoURL: "https://drive.google.com/thumbnail?id=1rtUsL7fYBE1Pj6T3NPYOmoA_sd2YgQ_5&sz=w1200",
+    logoURL:  "https://drive.google.com/thumbnail?id=12edm3I8Y0LOPYi-2IiP8DWLicjEY1dej&sz=w200",
   },
 
   // ── Art & events ───────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ export const projets: Projet[] = [
     vital: false,
     color: "#800080",
     montant: 1400,
-    photoURL: "https://drive.google.com/uc?export=view&id=1DJwd5syHsMTKPxNhZv4HxKGonSRTrEUL",
-    logoURL:  "https://drive.google.com/uc?export=view&id=1Opq7-PHjMpWRz5ggzJP3s3vjH-oq5Ucj",
+    photoURL: "https://drive.google.com/thumbnail?id=1DJwd5syHsMTKPxNhZv4HxKGonSRTrEUL&sz=w1200",
+    logoURL:  "https://drive.google.com/thumbnail?id=1Opq7-PHjMpWRz5ggzJP3s3vjH-oq5Ucj&sz=w200",
   },
 ];
