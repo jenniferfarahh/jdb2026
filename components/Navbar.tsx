@@ -206,8 +206,8 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 95,
           background: "var(--nav-bg)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
           borderBottom: "1px solid var(--border)",
           transform: open ? "translateY(0)" : "translateY(-100%)",
           transition: "transform 0.3s cubic-bezier(0.32,0.72,0,1)",
@@ -292,11 +292,11 @@ export default function Navbar() {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
           height: 64,
-          background: showBackground ? "var(--nav-bg)" : "transparent",
-          backdropFilter: showBackground ? "blur(20px)" : "none",
-          WebkitBackdropFilter: showBackground ? "blur(20px)" : "none",
-          borderBottom: "none",
-          transition: "background 0.3s ease, backdrop-filter 0.3s ease",
+          background: "var(--nav-bg)",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
+          borderBottom: "1px solid var(--border)",
+          transition: "none",
         }}
       >
         <div

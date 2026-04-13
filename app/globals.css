@@ -11,7 +11,7 @@
   --teal:        #2ABFC4;
   --text:        #E8F0FF;
   --muted:       rgba(232,240,255,0.42);
-  --nav-bg:      rgba(6,12,32,0.85);
+  --nav-bg:      #060C20;
 }
 
 /* ── LIGHT THEME ─────────────────────────────────────── */
@@ -25,7 +25,7 @@
   --teal:        #0D8F95;
   --text:        #0A1040;
   --muted:       rgba(10,16,64,0.48);
-  --nav-bg:      rgba(238,243,255,0.92);
+  --nav-bg:      #EEF3FF;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
