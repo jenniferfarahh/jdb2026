@@ -134,8 +134,8 @@ function StepBadge({ n, active }: { n: number; active: boolean }) {
       fontSize: "0.72rem", fontWeight: 900, flexShrink: 0,
       background: active
         ? "linear-gradient(135deg, #2563EB, #2ABFC4)"
-        : "rgba(255,255,255,0.08)",
-      color: active ? "white" : "rgba(232,240,255,0.4)",
+        : "var(--border)",
+      color: active ? "white" : "var(--muted)",
     }}>
       {n}
     </span>
@@ -149,9 +149,9 @@ function WeightPill({ weight, active }: { weight: number; active: boolean }) {
     <span style={{
       fontSize: "0.72rem", fontWeight: 700, padding: "3px 8px", borderRadius: 100,
       flexShrink: 0,
-      background: active ? "rgba(37,99,235,0.2)" : "rgba(255,255,255,0.05)",
-      color: active ? "#4890E8" : "rgba(232,240,255,0.3)",
-      border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "rgba(255,255,255,0.06)"}`,
+      background: active ? "rgba(37,99,235,0.2)" : "var(--border)",
+      color: active ? "#4890E8" : "var(--muted)",
+      border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "var(--border)"}`,
     }}>
       {weight} pt{weight > 1 ? "s" : ""}
     </span>
@@ -172,8 +172,8 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
     <div style={{
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
       borderRadius: 14, transition: "all 0.2s",
-      background: projet ? `${projet.color}12` : "rgba(255,255,255,0.025)",
-      border: `1px solid ${projet ? projet.color + "35" : "rgba(255,255,255,0.06)"}`,
+      background: projet ? `${projet.color}12` : "var(--bg-card)",
+      border: `1px solid ${projet ? projet.color + "35" : "var(--border)"}`,
       minHeight: 52,
     }}>
       {/* Rank */}
@@ -183,8 +183,8 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
         fontSize: "0.72rem", fontWeight: 900,
         background: projet
           ? `linear-gradient(135deg, ${projet.color}90, ${projet.color}50)`
-          : "rgba(255,255,255,0.06)",
-        color: projet ? "white" : "rgba(232,240,255,0.25)",
+          : "var(--border)",
+        color: projet ? "white" : "var(--muted)",
       }}>
         {rank}
       </span>
@@ -204,25 +204,23 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
             <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{projet.asso}</p>
           </div>
           <WeightPill weight={weight} active />
-          {/* Reorder — hidden on mobile */}
-          {!isMobile && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
-              {(["▲", "▼"] as const).map((arrow, di) => (
-                <button key={arrow} type="button"
-                  onClick={di === 0 ? onMoveUp : onMoveDown}
-                  disabled={di === 0 ? !canMoveUp : !canMoveDown}
-                  style={{
-                    width: 20, height: 20, borderRadius: 5, border: "none",
-                    background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
-                    opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.6rem", color: "var(--muted)",
-                  }}>
-                  {arrow}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Reorder arrows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+            {(["▲", "▼"] as const).map((arrow, di) => (
+              <button key={arrow} type="button"
+                onClick={di === 0 ? onMoveUp : onMoveDown}
+                disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                style={{
+                  width: 20, height: 20, borderRadius: 5, border: "1px solid var(--border)",
+                  background: "var(--bg-card)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.25,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.6rem", color: "var(--muted)",
+                }}>
+                {arrow}
+              </button>
+            ))}
+          </div>
           <button type="button" onClick={onRemove} style={{
             width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
             background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
@@ -231,7 +229,7 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
           }}>✕</button>
         </>
       ) : (
-        <p style={{ fontSize: "0.75rem", color: "rgba(232,240,255,0.2)", flex: 1 }}>
+        <p style={{ fontSize: "0.75rem", color: "var(--muted)", opacity: 0.5, flex: 1 }}>
           Slot {rank} — libre (optionnel)
         </p>
       )}
@@ -253,16 +251,16 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
     <div style={{
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
       borderRadius: 14, transition: "all 0.2s",
-      background: ong ? `${ong.color}12` : "rgba(255,255,255,0.025)",
-      border: `1px solid ${ong ? ong.color + "35" : "rgba(255,255,255,0.06)"}`,
+      background: ong ? `${ong.color}12` : "var(--bg-card)",
+      border: `1px solid ${ong ? ong.color + "35" : "var(--border)"}`,
       minHeight: 52,
     }}>
       <span style={{
         width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: "0.72rem", fontWeight: 900,
-        background: ong ? `linear-gradient(135deg, ${ong.color}90, ${ong.color}50)` : "rgba(255,255,255,0.06)",
-        color: ong ? "white" : "rgba(232,240,255,0.25)",
+        background: ong ? `linear-gradient(135deg, ${ong.color}90, ${ong.color}50)` : "var(--border)",
+        color: ong ? "white" : "var(--muted)",
       }}>
         {rank}
       </span>
@@ -281,25 +279,23 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
             </p>
           </div>
           <WeightPill weight={weight} active />
-          {/* Reorder — hidden on mobile */}
-          {!isMobile && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
-              {(["▲", "▼"] as const).map((arrow, di) => (
-                <button key={arrow} type="button"
-                  onClick={di === 0 ? onMoveUp : onMoveDown}
-                  disabled={di === 0 ? !canMoveUp : !canMoveDown}
-                  style={{
-                    width: 20, height: 20, borderRadius: 5, border: "none",
-                    background: "rgba(255,255,255,0.06)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
-                    opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.2,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.6rem", color: "var(--muted)",
-                  }}>
-                  {arrow}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Reorder arrows */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
+            {(["▲", "▼"] as const).map((arrow, di) => (
+              <button key={arrow} type="button"
+                onClick={di === 0 ? onMoveUp : onMoveDown}
+                disabled={di === 0 ? !canMoveUp : !canMoveDown}
+                style={{
+                  width: 20, height: 20, borderRadius: 5, border: "1px solid var(--border)",
+                  background: "var(--bg-card)", cursor: (di === 0 ? canMoveUp : canMoveDown) ? "pointer" : "not-allowed",
+                  opacity: (di === 0 ? canMoveUp : canMoveDown) ? 1 : 0.25,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.6rem", color: "var(--muted)",
+                }}>
+                {arrow}
+              </button>
+            ))}
+          </div>
           <button type="button" onClick={onRemove} style={{
             width: 22, height: 22, borderRadius: "50%", border: "none", flexShrink: 0,
             background: "rgba(239,68,68,0.18)", color: "#ef4444", cursor: "pointer",
@@ -308,7 +304,7 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
           }}>✕</button>
         </>
       ) : (
-        <p style={{ fontSize: "0.75rem", color: "rgba(232,240,255,0.2)", flex: 1 }}>
+        <p style={{ fontSize: "0.75rem", color: "var(--muted)", opacity: 0.5, flex: 1 }}>
           Slot {rank} — libre (optionnel)
         </p>
       )}
@@ -577,7 +573,7 @@ export default function JeVotePage() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { icon: "🏆", text: "45 000 € de dotation à redistribuer entre les projets" },
+                { icon: "🏆", text: "35 000 € de dotation à redistribuer entre les projets" },
                 { icon: "🌍", text: "5 000 € pour le pool ONG — votez pour 3 associations" },
                 { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par compte" },
               ].map(({ icon, text }) => (
@@ -783,7 +779,7 @@ export default function JeVotePage() {
           {/* Info row */}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
             {[
-              { icon: "🏆", label: "45 000 €", sub: "Dotation projets" },
+              { icon: "🏆", label: "35 000 €", sub: "Dotation projets" },
               { icon: "🌍", label: "5 000 €",  sub: "Pool ONG" },
               { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
             ].map(({ icon, label, sub }) => (
@@ -998,7 +994,7 @@ export default function JeVotePage() {
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", maxWidth: 420, margin: "0 auto", lineHeight: 1.65 }}>
             Classez vos projets préférés. La dotation de{" "}
-            <strong style={{ color: "var(--text)" }}>45 000 €</strong> est répartie au pro-rata des voix.
+            <strong style={{ color: "var(--text)" }}>35 000 €</strong> est répartie au pro-rata des voix.
           </p>
         </div>
 
