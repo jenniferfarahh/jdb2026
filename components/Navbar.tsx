@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
@@ -118,7 +119,7 @@ function AvatarMenu({
         style={{
           position: "absolute", right: 0, top: "calc(100% + 8px)",
           minWidth: 200, borderRadius: 16, overflow: "hidden",
-          background: "var(--bg-card)", border: "1px solid var(--border)",
+          background: "var(--nav-bg)", border: "1px solid var(--border)",
           boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0) scale(1)" : "translateY(-8px) scale(0.96)",
@@ -176,71 +177,64 @@ function AvatarMenu({
   )
 }
 
-// ─── Mobile Hamburger Menu (unauthenticated) ──────────────────────────────────
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+// ─── Guest Mobile Dropdown (unauthenticated) ─────────────────────────────────
+function GuestDropdown({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   const pathname = usePathname()
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Prevent scroll when open
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
-  }, [open])
+    if (!open) return
+    function close(e: MouseEvent | TouchEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener("mousedown", close)
+    document.addEventListener("touchstart", close)
+    return () => {
+      document.removeEventListener("mousedown", close)
+      document.removeEventListener("touchstart", close)
+    }
+  }, [open, onClose])
 
   return (
-    <>
-      {/* Backdrop */}
+    <div ref={ref} style={{ position: "relative" }}>
+      {children}
+      {/* Dropdown card — same style as AvatarMenu */}
       <div
-        aria-hidden="true"
-        onClick={onClose}
+        role="menu"
         style={{
-          position: "fixed", inset: 0, zIndex: 90,
-          background: "rgba(0,0,0,0.5)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 0.2s ease",
-        }}
-      />
-
-      {/* Panel */}
-      <div
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 95,
+          position: "absolute", right: 0, top: "calc(100% + 8px)",
+          minWidth: 200, borderRadius: 16, overflow: "hidden",
           background: "var(--nav-bg)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid var(--border)",
-          transform: open ? "translateY(0)" : "translateY(-100%)",
-          transition: "transform 0.3s cubic-bezier(0.32,0.72,0,1)",
-          paddingTop: 72, paddingBottom: 24, paddingLeft: 20, paddingRight: 20,
+          border: "1px solid var(--border)",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0) scale(1)" : "translateY(-8px) scale(0.96)",
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.15s ease, transform 0.15s ease",
+          zIndex: 200,
         }}
       >
-        <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {NAV_LINKS.map(({ href, label, external }) => {
-            const isActive = !external && pathname === href
-            const sharedStyle = {
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 20px", borderRadius: 16, textDecoration: "none",
-              fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em",
-              color: isActive ? "var(--blue-light)" : "var(--text)",
-              background: isActive ? "rgba(37,99,235,0.1)" : "var(--bg-card)",
-              border: `1px solid ${isActive ? "rgba(37,99,235,0.3)" : "var(--border)"}`,
-              WebkitTapHighlightColor: "transparent",
-            } as const
-            return external ? (
-              <a key={href} href={href} onClick={onClose} style={sharedStyle}>
-                {label}
-                <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
-              </a>
-            ) : (
-              <Link key={href} href={href} onClick={onClose} style={sharedStyle}>
-                {label}
-                <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
-              </Link>
-            )
-          })}
-        </nav>
+        {NAV_LINKS.map(({ href, label, external }) => {
+          const isActive = !external && pathname === href
+          const sharedStyle = {
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px", textDecoration: "none", fontSize: 14, fontWeight: 600,
+            color: isActive ? "var(--blue-light)" : "var(--text)",
+            background: isActive ? "rgba(37,99,235,0.06)" : "transparent",
+          } as const
+          return external ? (
+            <a key={href} href={href} role="menuitem" onClick={onClose} style={sharedStyle}>
+              {label}
+            </a>
+          ) : (
+            <Link key={href} href={href} role="menuitem" onClick={onClose} style={sharedStyle}>
+              {label}
+              {isActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />}
+            </Link>
+          )
+        })}
       </div>
-    </>
+    </div>
   )
 }
 
@@ -365,49 +359,29 @@ export default function Navbar() {
                   {user ? (
                     <AvatarMenu user={user} onLogout={handleLogout} mobileLinks />
                   ) : (
-                    <button
-                      onClick={() => setMenuOpen(v => !v)}
-                      aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-                      aria-expanded={menuOpen}
-                      aria-controls="mobile-menu"
-                      style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        border: "1px solid var(--border)", background: "var(--bg-card)",
-                        cursor: "pointer", display: "flex", alignItems: "center",
-                        justifyContent: "center", flexShrink: 0,
-                        WebkitTapHighlightColor: "transparent",
-                      }}
-                    >
-                      {/* Animated hamburger → X */}
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <line
-                          x1="2" y1="5" x2="16" y2="5"
-                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
-                          style={{
-                            transformOrigin: "9px 5px",
-                            transition: "transform 0.25s ease",
-                            transform: menuOpen ? "rotate(45deg) translate(0, 4px)" : "none",
-                          }}
-                        />
-                        <line
-                          x1="2" y1="9" x2="16" y2="9"
-                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
-                          style={{
-                            transition: "opacity 0.2s ease",
-                            opacity: menuOpen ? 0 : 1,
-                          }}
-                        />
-                        <line
-                          x1="2" y1="13" x2="16" y2="13"
-                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
-                          style={{
-                            transformOrigin: "9px 13px",
-                            transition: "transform 0.25s ease",
-                            transform: menuOpen ? "rotate(-45deg) translate(0, -4px)" : "none",
-                          }}
-                        />
-                      </svg>
-                    </button>
+                    <GuestDropdown open={menuOpen} onClose={() => setMenuOpen(false)}>
+                      <button
+                        onClick={() => setMenuOpen(v => !v)}
+                        aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                        aria-expanded={menuOpen}
+                        style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          border: "1px solid var(--border)", background: "var(--nav-bg)",
+                          cursor: "pointer", display: "flex", alignItems: "center",
+                          justifyContent: "center", flexShrink: 0,
+                          WebkitTapHighlightColor: "transparent",
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                          <line x1="2" y1="5" x2="16" y2="5" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                            style={{ transformOrigin: "9px 5px", transition: "transform 0.25s ease", transform: menuOpen ? "rotate(45deg) translate(0, 4px)" : "none" }} />
+                          <line x1="2" y1="9" x2="16" y2="9" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                            style={{ transition: "opacity 0.2s ease", opacity: menuOpen ? 0 : 1 }} />
+                          <line x1="2" y1="13" x2="16" y2="13" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                            style={{ transformOrigin: "9px 13px", transition: "transform 0.25s ease", transform: menuOpen ? "rotate(-45deg) translate(0, -4px)" : "none" }} />
+                        </svg>
+                      </button>
+                    </GuestDropdown>
                   )}
                 </div>
               </>
@@ -416,8 +390,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile slide-down menu */}
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
   )
 }
