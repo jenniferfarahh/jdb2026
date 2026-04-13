@@ -1,163 +1,413 @@
+"use client"
 
-"use client";
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useState, useEffect, useRef } from "react"
+import LogoForum from "@/components/LogoForum"
+import { useTheme } from "@/components/ThemeProvider"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import LogoForum from "@/components/LogoForum";
-import { useTheme } from "@/components/ThemeProvider";
-
-const links = [
+const NAV_LINKS = [
   { href: "/projets", label: "Projets" },
   { href: "/ong", label: "ONG" },
   { href: "/contact", label: "Contact" },
-];
+]
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6C73B" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/>
+      <line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue-light)" strokeWidth="2" strokeLinecap="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  )
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18l6-6-6-6"/>
+    </svg>
+  )
+}
+
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
 function ThemeToggle() {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle } = useTheme()
   return (
     <button
       onClick={toggle}
       aria-label="Changer le thème"
-      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-110 flex-shrink-0"
-      style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+      style={{
+        width: 36, height: 36, borderRadius: 10, border: "1px solid var(--border)",
+        background: "var(--bg-card)", cursor: "pointer", display: "flex",
+        alignItems: "center", justifyContent: "center", flexShrink: 0,
+        WebkitTapHighlightColor: "transparent",
+      }}
     >
-      {theme === "dark" ? (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F6C73B" strokeWidth="2.2" strokeLinecap="round">
-          <circle cx="12" cy="12" r="4.5" />
-          <line x1="12" y1="2" x2="12" y2="4.5" /><line x1="12" y1="19.5" x2="12" y2="22" />
-          <line x1="4.22" y1="4.22" x2="5.95" y2="5.95" /><line x1="18.05" y1="18.05" x2="19.78" y2="19.78" />
-          <line x1="2" y1="12" x2="4.5" y2="12" /><line x1="19.5" y1="12" x2="22" y2="12" />
-          <line x1="4.22" y1="19.78" x2="5.95" y2="18.05" /><line x1="18.05" y1="5.95" x2="19.78" y2="4.22" />
-        </svg>
-      ) : (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2.2" strokeLinecap="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>
-  );
+  )
 }
 
-export default function Navbar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+// ─── User Avatar Dropdown ─────────────────────────────────────────────────────
+interface UserInfo { prenom: string; nom: string }
 
-  // Lock body scroll when menu open
+function AvatarMenu({
+  user,
+  onLogout,
+  mobileLinks = false,
+}: {
+  user: UserInfo
+  onLogout: () => void
+  mobileLinks?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const ref = useRef<HTMLDivElement>(null)
+  const initials = ((user.prenom?.[0] ?? "") + (user.nom?.[0] ?? "")).toUpperCase()
+
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+    if (!open) return
+    function close(e: MouseEvent | TouchEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", close)
+    document.addEventListener("touchstart", close)
+    return () => {
+      document.removeEventListener("mousedown", close)
+      document.removeEventListener("touchstart", close)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        aria-label="Menu utilisateur"
+        aria-expanded={open}
+        style={{
+          width: 36, height: 36, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.15)",
+          background: "linear-gradient(135deg,#2563EB,#2ABFC4)", color: "#fff",
+          fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex",
+          alignItems: "center", justifyContent: "center", flexShrink: 0,
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
+        {initials}
+      </button>
+
+      {/* Dropdown */}
+      <div
+        role="menu"
+        style={{
+          position: "absolute", right: 0, top: "calc(100% + 8px)",
+          minWidth: 200, borderRadius: 16, overflow: "hidden",
+          background: "var(--bg-card)", border: "1px solid var(--border)",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0) scale(1)" : "translateY(-8px) scale(0.96)",
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.15s ease, transform 0.15s ease",
+          zIndex: 200,
+        }}
+      >
+        {/* Name header */}
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" }}>
+            {user.prenom} {user.nom}
+          </p>
+        </div>
+
+        {/* Nav links — only on mobile */}
+        {mobileLinks && NAV_LINKS.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 16px", textDecoration: "none", fontSize: 14, fontWeight: 600,
+              color: pathname === href ? "var(--blue-light)" : "var(--text)",
+              background: pathname === href ? "rgba(37,99,235,0.06)" : "transparent",
+            }}
+          >
+            {label}
+            {pathname === href && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--teal)", flexShrink: 0 }} />}
+          </Link>
+        ))}
+
+        {/* Divider before logout */}
+        <div style={{ height: 1, background: "var(--border)" }} />
+
+        {/* Logout */}
+        <button
+          role="menuitem"
+          onClick={() => { setOpen(false); onLogout() }}
+          style={{
+            width: "100%", padding: "12px 16px", background: "transparent",
+            border: "none", textAlign: "left", fontSize: 14, fontWeight: 600,
+            color: "#f87171", cursor: "pointer", display: "block",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          Se déconnecter
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Mobile Hamburger Menu (unauthenticated) ──────────────────────────────────
+function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const pathname = usePathname()
+
+  // Prevent scroll when open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : ""
+    return () => { document.body.style.overflow = "" }
+  }, [open])
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50" style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", background: "var(--nav-bg)" }}>
-        {/* Use 3 equal columns: left=1fr, center=auto, right=1fr — guarantees true centering */}
-        <div
-          className="h-16 max-w-7xl mx-auto px-6 sm:px-10"
-          style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center" }}
-        >
-          {/* Left — Forum logo */}
-          <div className="flex items-center justify-start">
-            <Link href="/" onClick={() => setOpen(false)} className="flex items-center hover:opacity-75 transition-opacity">
-              <LogoForum size={44} />
-            </Link>
-          </div>
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 90,
+          background: "rgba(0,0,0,0.5)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.2s ease",
+        }}
+      />
 
-          {/* Center — desktop nav links, perfectly centered */}
-          <div className="hidden md:flex items-center gap-10">
-            {links.map(({ href, label }) => (
+      {/* Panel */}
+      <div
+        style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 95,
+          background: "var(--bg)",
+          transform: open ? "translateY(0)" : "translateY(-100%)",
+          transition: "transform 0.3s cubic-bezier(0.32,0.72,0,1)",
+          paddingTop: 72, paddingBottom: 24, paddingLeft: 20, paddingRight: 20,
+        }}
+      >
+        <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 20px", borderRadius: 16, textDecoration: "none",
+                fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em",
+                color: pathname === href ? "var(--blue-light)" : "var(--text)",
+                background: pathname === href ? "rgba(37,99,235,0.1)" : "var(--bg-card)",
+                border: `1px solid ${pathname === href ? "rgba(37,99,235,0.3)" : "var(--border)"}`,
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              {label}
+              <span style={{ opacity: 0.35 }}><ChevronIcon /></span>
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </>
+  )
+}
+
+// ─── Main Navbar ───────────────────────────────────────────────────────────────
+export default function Navbar() {
+  const pathname = usePathname()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolledOnHome, setScrolledOnHome] = useState(false)
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [hydrated, setHydrated] = useState(false)
+
+  const isHome = pathname === "/"
+  // Immediately true on non-home pages — no flash, no effect needed
+  const showBackground = !isHome || scrolledOnHome
+
+  // Only track scroll on homepage
+  useEffect(() => {
+    if (!isHome) return
+    function onScroll() { setScrolledOnHome(window.scrollY > 10) }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [isHome])
+
+  // Fetch session on mount + every route change
+  useEffect(() => {
+    setHydrated(true)
+    fetch("/api/auth/me")
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => setUser(data?.authenticated ? { prenom: data.prenom, nom: data.nom } : null))
+      .catch(() => setUser(null))
+  }, [pathname])
+
+  // Close mobile menu on route change
+  useEffect(() => { setMenuOpen(false) }, [pathname])
+
+  function handleLogout() {
+    setUser(null)
+    setMenuOpen(false)
+    // Use full browser navigation so the Set-Cookie header from the logout
+    // route is correctly applied — router.push() can drop cookies on redirects.
+    window.location.href = "/api/auth/logout"
+  }
+
+  return (
+    <>
+      <nav
+        aria-label="Navigation principale"
+        style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+          height: 64,
+          background: showBackground ? "var(--nav-bg)" : "transparent",
+          backdropFilter: showBackground ? "blur(20px)" : "none",
+          WebkitBackdropFilter: showBackground ? "blur(20px)" : "none",
+          borderBottom: "none",
+          transition: "background 0.3s ease, backdrop-filter 0.3s ease",
+        }}
+      >
+        <div
+          style={{
+            height: "100%", maxWidth: 1200, margin: "0 auto",
+            padding: "0 20px", display: "flex", alignItems: "center",
+            justifyContent: "space-between", gap: 16,
+          }}
+        >
+          {/* ── Left: Logo ── */}
+          <Link
+            href="/"
+            aria-label="Accueil JDB 2026"
+            style={{ display: "flex", alignItems: "center", textDecoration: "none", flexShrink: 0 }}
+          >
+            <LogoForum size={40} />
+          </Link>
+
+          {/* ── Center: Desktop links (absolutely centered in bar) ── */}
+          <div
+            aria-label="Liens de navigation"
+            style={{
+              display: "flex", alignItems: "center", gap: 40,
+              position: "absolute", left: "50%", transform: "translateX(-50%)",
+            }}
+            className="hide-on-mobile"
+          >
+            {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className="text-sm font-semibold tracking-wide transition-all duration-200 relative group whitespace-nowrap"
-                style={{ color: pathname === href ? "var(--blue-light)" : "var(--muted)" }}
+                style={{
+                  textDecoration: "none", fontSize: 14, fontWeight: 600,
+                  letterSpacing: "0.01em", whiteSpace: "nowrap",
+                  color: pathname === href ? "var(--blue-light)" : "var(--muted)",
+                  transition: "color 0.2s",
+                  position: "relative",
+                }}
               >
                 {label}
-                <span
-                  className="absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-300 group-hover:w-full"
-                  style={{ width: pathname === href ? "100%" : "0%", background: "var(--teal)" }}
-                />
+                {pathname === href && (
+                  <span style={{
+                    position: "absolute", bottom: -4, left: 0, right: 0,
+                    height: 2, borderRadius: 2, background: "var(--teal)",
+                  }} />
+                )}
               </Link>
             ))}
           </div>
 
-          {/* Right — theme toggle + hamburger */}
-          <div className="flex items-center justify-end gap-3">
+          {/* ── Right: Actions ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
             <ThemeToggle />
-            <button
-              onClick={() => setOpen(!open)}
-              className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center transition-all"
-              style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
-              aria-label="Menu"
-            >
-              <div className="flex flex-col gap-1.5 w-5">
-                <span className={`block h-0.5 rounded-full transition-all duration-300 origin-center ${open ? "rotate-45 translate-y-2" : ""}`} style={{ background: "var(--text)" }} />
-                <span className={`block h-0.5 rounded-full transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""}`} style={{ background: "var(--text)" }} />
-                <span className={`block h-0.5 rounded-full transition-all duration-300 origin-center ${open ? "-rotate-45 -translate-y-2" : ""}`} style={{ background: "var(--text)" }} />
-              </div>
-            </button>
+
+            {hydrated && (
+              <>
+                {/* Desktop avatar */}
+                {user && (
+                  <div className="hide-on-mobile">
+                    <AvatarMenu user={user} onLogout={handleLogout} />
+                  </div>
+                )}
+
+                {/* Mobile */}
+                <div className="show-on-mobile">
+                  {user ? (
+                    <AvatarMenu user={user} onLogout={handleLogout} mobileLinks />
+                  ) : (
+                    <button
+                      onClick={() => setMenuOpen(v => !v)}
+                      aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                      aria-expanded={menuOpen}
+                      aria-controls="mobile-menu"
+                      style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        border: "1px solid var(--border)", background: "var(--bg-card)",
+                        cursor: "pointer", display: "flex", alignItems: "center",
+                        justifyContent: "center", flexShrink: 0,
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      {/* Animated hamburger → X */}
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <line
+                          x1="2" y1="5" x2="16" y2="5"
+                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                          style={{
+                            transformOrigin: "9px 5px",
+                            transition: "transform 0.25s ease",
+                            transform: menuOpen ? "rotate(45deg) translate(0, 4px)" : "none",
+                          }}
+                        />
+                        <line
+                          x1="2" y1="9" x2="16" y2="9"
+                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                          style={{
+                            transition: "opacity 0.2s ease",
+                            opacity: menuOpen ? 0 : 1,
+                          }}
+                        />
+                        <line
+                          x1="2" y1="13" x2="16" y2="13"
+                          stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"
+                          style={{
+                            transformOrigin: "9px 13px",
+                            transition: "transform 0.25s ease",
+                            transform: menuOpen ? "rotate(-45deg) translate(0, -4px)" : "none",
+                          }}
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Mobile full-screen overlay */}
-      <div
-        className="md:hidden fixed inset-0 z-40 transition-all duration-300"
-        style={{
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          background: "var(--bg)",
-        }}
-      >
-        {/* Content — starts below navbar */}
-        <div
-          className="flex flex-col h-full pt-20 px-8"
-          style={{
-            transform: open ? "translateY(0)" : "translateY(-16px)",
-            transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
-          }}
-        >
-          {/* Nav links */}
-          <nav className="flex flex-col gap-2 mt-4">
-            {links.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between px-5 py-4 rounded-2xl text-xl font-bold transition-all"
-                style={{
-                  color: pathname === href ? "var(--blue-light)" : "var(--text)",
-                  background: pathname === href ? "rgba(37,99,235,0.1)" : "var(--bg-card)",
-                  border: `1px solid ${pathname === href ? "rgba(37,99,235,0.3)" : "var(--border)"}`,
-                }}
-              >
-                {label}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </Link>
-            ))}
-          </nav>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* CTA at bottom */}
-          <div className="pb-10 flex flex-col gap-3">
-            <Link
-              href="/je-vote"
-              onClick={() => setOpen(false)}
-              className="btn-primary w-full text-center !justify-center !py-4 !text-base !rounded-2xl"
-            >
-              ✦ Je Vote
-            </Link>
-            <p className="text-center text-xs" style={{ color: "var(--muted)" }}>
-              © 2026 Forum CentraleSupélec
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Mobile slide-down menu */}
+      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
-  );
+  )
 }

@@ -53,42 +53,24 @@ const infoCards = [
 
 export default function Home() {
   return (
-    <section className="hero-bg" style={{
-      width: "100%",
-      minHeight: "calc(100vh - 64px - 72px)",
-      padding: "88px 24px 24px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-
+    <div className="hero-bg" style={{ minHeight: "100dvh", marginTop: "-64px", display: "flex", flexDirection: "column" }}>
       {/* Orbs */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-        <div className="orb-1" style={{ position: "absolute", top: "-100px", left: "15%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 65%)" }}/>
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
+        <div className="orb-1" style={{ position: "absolute", top: "-160px", left: "15%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 65%)" }}/>
         <div className="orb-2" style={{ position: "absolute", bottom: "-100px", right: "15%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(42,191,196,0.11) 0%, transparent 65%)" }}/>
       </div>
 
-      {/* ── Main container ──
-           mobile  → flex-col, items-center, text-center
-           desktop → flex-row, items-center, text-left
-      ── */}
-      <div className="fade-up" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 1100 }}>
-          <div className="
-            flex flex-col items-center text-center gap-8
-            lg:flex-row lg:items-center lg:gap-20 lg:justify-between
-          ">
+      {/* Main content */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 1, padding: "96px 24px 32px" }}>
+        <div className="fade-up" style={{ width: "100%", maxWidth: 1100 }}>
+          <div className="flex flex-col items-center text-center gap-8 lg:flex-row lg:items-center lg:gap-20 lg:justify-between">
 
-          {/* ══ LEFT ══ */}
-          <div className="flex flex-col items-center gap-7 w-full lg:flex-1">
+            {/* ══ LEFT ══ */}
+            <div className="flex flex-col items-center gap-7 w-full lg:flex-1">
+              <div className="logo-glow w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[400px]">
+                <LogoJDB width={680} height={340} />
+              </div>
 
-            {/* Logo */}
-            <div className="logo-glow w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[400px]">
-              <LogoJDB width={680} height={340} />
-            </div>
-
-            {/* Title */}
               <h1
                 className="w-full"
                 style={{
@@ -102,39 +84,47 @@ export default function Home() {
                 <span style={{ color: "var(--text)" }}>2026</span>
               </h1>
 
-            {/* 3 cards — always side by side */}
-            <div className="w-full" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {infoCards.map(({ icon, label, value, bg, color, border }) => (
-                <div key={label} className="glass" style={{
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  textAlign: "center", padding: "14px 8px", borderRadius: 16, gap: 8,
-                  borderColor: border,
-                }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: bg, color, border: `1px solid ${border}` }}>
-                    {icon}
+              {/* 3 cards */}
+              <div className="w-full" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                {infoCards.map(({ icon, label, value, bg, color, border }) => (
+                  <div key={label} className="glass" style={{
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    textAlign: "center", padding: "14px 8px", borderRadius: 16, gap: 8,
+                    borderColor: border,
+                  }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: bg, color, border: `1px solid ${border}` }}>
+                      {icon}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--teal)", marginBottom: 3 }}>{label}</p>
+                      <p style={{ fontWeight: 900, fontSize: "clamp(0.72rem, 1.8vw, 0.88rem)", lineHeight: 1.3, color: "var(--text)" }}>{value}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p style={{ fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--teal)", marginBottom: 3 }}>{label}</p>
-                    <p style={{ fontWeight: 900, fontSize: "clamp(0.72rem, 1.8vw, 0.88rem)", lineHeight: 1.3, color: "var(--text)" }}>{value}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link href="/projets" className="btn-primary">Voir les projets →</Link>
+                <Link href="/je-vote" className="btn-ghost">✦ Je Vote</Link>
+              </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link href="/projets" className="btn-primary">Voir les projets →</Link>
-              <Link href="/je-vote" className="btn-ghost">✦ Je Vote</Link>
+            {/* ══ RIGHT — Phone ══ */}
+            <div className="flex-shrink-0 flex items-center justify-center">
+              <PhoneFloat />
             </div>
-          </div>
 
-          {/* ══ RIGHT — Phone ══ */}
-          <div className="flex-shrink-0 flex items-center justify-center">
-            <PhoneFloat />
           </div>
-
         </div>
       </div>
-    </section>
+
+      {/* Copyright — inline at the bottom */}
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", padding: "16px 24px" }}>
+        <p style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
+          © 2026 Forum CentraleSupélec — Journée des Bourses
+        </p>
+      </div>
+    </div>
   );
 }
