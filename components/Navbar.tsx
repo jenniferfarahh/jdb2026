@@ -206,8 +206,8 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 95,
           background: "var(--nav-bg)",
-          backdropFilter: "none",
-          WebkitBackdropFilter: "none",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           borderBottom: "1px solid var(--border)",
           transform: open ? "translateY(0)" : "translateY(-100%)",
           transition: "transform 0.3s cubic-bezier(0.32,0.72,0,1)",
