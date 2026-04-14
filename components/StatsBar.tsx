@@ -1,6 +1,6 @@
 const stats = [
   { value: "70+",     label: "Projets en compétition", icon: "🚀", color: "#4890E8" },
-  { value: "45 000€", label: "À redistribuer",          icon: "💰", color: "#2ABFC4" },
+  { value: "35 000€", label: "À redistribuer",          icon: "💰", color: "#2ABFC4" },
   { value: "12",      label: "ONG partenaires",          icon: "🤝", color: "#4890E8" },
   { value: "1 200+",  label: "Votants attendus",         icon: "🗳️", color: "#2ABFC4" },
 ];

@@ -5,6 +5,7 @@
       "name": "jdb2026",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "cwd": ".",
       "port": 3001
     }
   ]

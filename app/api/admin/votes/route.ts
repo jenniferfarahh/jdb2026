@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     return {
       id: s.id,
       prenom: s.prenom,
+      nom: s.nom,
+      email: s.email,
       promoType: s.promoType,
       voterCategory: s.voterCategory,
       votedAt: s.votedAt,

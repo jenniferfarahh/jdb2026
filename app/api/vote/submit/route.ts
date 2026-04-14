@@ -69,8 +69,11 @@ export async function POST(req: NextRequest) {
   const maxProjects = category === 'ingenieur' ? 5 : 3
   const weights = VOTER_WEIGHTS[category]
 
-  if (!Array.isArray(projectRanking) || projectRanking.length !== maxProjects) {
-    return NextResponse.json({ error: `Vous devez classer exactement ${maxProjects} projets.` }, { status: 400 })
+  if (!Array.isArray(projectRanking) || projectRanking.length === 0) {
+    return NextResponse.json({ error: 'Vous devez sélectionner au moins 1 projet.' }, { status: 400 })
+  }
+  if (projectRanking.length > maxProjects) {
+    return NextResponse.json({ error: `Maximum ${maxProjects} projets pour votre promotion.` }, { status: 400 })
   }
   if (new Set(projectRanking).size !== projectRanking.length) {
     return NextResponse.json({ error: 'Projets dupliqués dans votre classement.' }, { status: 400 })
@@ -81,12 +84,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Un ou plusieurs IDs de projets sont invalides.' }, { status: 400 })
   }
 
-  // 7. Validate ONG choices (mandatory, exactly 3)
+  // 7. Validate ONG choices (max 3)
   const rawOng = Array.isArray(ongRanking) ? ongRanking : []
   const validOngRanking = rawOng.slice(0, 3)
-  if (validOngRanking.length !== 3) {
-    return NextResponse.json({ error: 'Vous devez classer exactement 3 ONGs.' }, { status: 400 })
-  }
   if (new Set(validOngRanking).size !== validOngRanking.length) {
     return NextResponse.json({ error: 'ONGs dupliquées dans votre classement.' }, { status: 400 })
   }
@@ -101,6 +101,8 @@ export async function POST(req: NextRequest) {
     id: randomBytes(16).toString('hex'),
     viarezоSub:    session.sub,
     prenom:        session.prenom,
+    nom:           session.nom ?? '',
+    email:         session.email ?? '',
     promoType:     promo,
     voterCategory: category,
     votedAt:       new Date().toISOString(),

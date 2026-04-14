@@ -9,6 +9,8 @@ interface OngVoteRow     { ongId: string;     rank: number; weight: number }
 interface VoteRow {
   id: string;
   prenom: string;
+  nom: string;
+  email: string;
   promoType: string;
   voterCategory: string;
   votedAt: string;
@@ -37,11 +39,11 @@ export default function AdminPage() {
 
   const exportCSV = () => {
     if (!data) return;
-    const rows = ["Prénom,Promo,Catégorie,Vote à,Projets (classés),ONGs (classés)"];
+    const rows = ["Prénom,Nom,Email,Promo,Catégorie,Vote à,Projets (classés),ONGs (classés)"];
     for (const v of data.votes) {
       const ps = v.projectVotes.map(p => { const proj = projets.find(x => x.id === p.projectId); return `#${p.rank} ${proj?.name ?? p.projectId}(${p.weight}pts)`; }).join(" | ");
       const os = v.ongVotes.map(o => { const ong = ongs.find(x => x.id === o.ongId); return `#${o.rank} ${ong?.name ?? o.ongId}(${o.weight}pts)`; }).join(" | ");
-      rows.push(`"${v.prenom}","${v.promoType}","${v.voterCategory}","${v.votedAt}","${ps}","${os}"`);
+      rows.push(`"${v.prenom}","${v.nom}","${v.email}","${v.promoType}","${v.voterCategory}","${v.votedAt}","${ps}","${os}"`);
     }
     const blob = new Blob([rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -73,7 +75,7 @@ export default function AdminPage() {
   }
 
   const filtered = (data?.votes ?? []).filter(v =>
-    !search || v.prenom.toLowerCase().includes(search.toLowerCase()) || v.promoType.toLowerCase().includes(search.toLowerCase())
+    !search || v.prenom.toLowerCase().includes(search.toLowerCase()) || v.nom.toLowerCase().includes(search.toLowerCase()) || v.email.toLowerCase().includes(search.toLowerCase()) || v.promoType.toLowerCase().includes(search.toLowerCase())
   );
   const byPromo: Record<string, number> = {};
   for (const v of data?.votes ?? []) byPromo[v.promoType] = (byPromo[v.promoType] ?? 0) + 1;
@@ -119,7 +121,10 @@ export default function AdminPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 900, background: "linear-gradient(135deg, rgba(37,99,235,0.25), rgba(42,191,196,0.25))", border: "1px solid rgba(37,99,235,0.3)", color: "#4890E8" }}>{idx + 1}</span>
                   <div>
-                    <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.95rem" }}>{v.prenom || "—"}</p>
+                    <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.95rem" }}>
+                      {[v.prenom, v.nom].filter(Boolean).join(" ") || "—"}
+                    </p>
+                    <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: "1px 0 0" }}>{v.email || "—"}</p>
                     <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{v.promoType} · {v.voterCategory}</p>
                   </div>
                 </div>

@@ -453,7 +453,7 @@ export default function JeVotePage() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!promo || projectRanking.length < maxProjects || ongRanking.length < 3) return;
+    if (!promo || projectRanking.length === 0) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -1109,9 +1109,7 @@ export default function JeVotePage() {
                 </span>
               </div>
               <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
-                {isMobile
-                  ? `Obligatoire — classez exactement ${maxProjects} projets. Utilisez ▲▼ pour réordonner.`
-                  : `Obligatoire — classez exactement ${maxProjects} projets. Utilisez ▲▼ pour réordonner.`}
+                Classez jusqu&apos;à {maxProjects} projets. Utilisez ▲▼ pour réordonner.
               </p>
 
               {/* Ranking slots */}
@@ -1228,23 +1226,11 @@ export default function JeVotePage() {
                 )}
               </div>
 
-              {step === "projects" && (
-                <>
-                  {projectRanking.length < maxProjects && (
-                    <p style={{ fontSize: "0.78rem", color: "#f59e0b", marginTop: 12, textAlign: "center", fontWeight: 600 }}>
-                      ⚠ Sélectionnez encore {maxProjects - projectRanking.length} projet{maxProjects - projectRanking.length > 1 ? "s" : ""}
-                    </p>
-                  )}
-                  <button type="button" onClick={() => setStep("ong")} className="btn-primary"
-                    disabled={projectRanking.length < maxProjects}
-                    style={{
-                      marginTop: 10, width: "100%", justifyContent: "center", padding: "13px",
-                      opacity: projectRanking.length < maxProjects ? 0.4 : 1,
-                      cursor: projectRanking.length < maxProjects ? "not-allowed" : "pointer",
-                    }}>
-                    Continuer vers les ONGs →
-                  </button>
-                </>
+              {step === "projects" && projectRanking.length > 0 && (
+                <button type="button" onClick={() => setStep("ong")} className="btn-primary"
+                  style={{ marginTop: 16, width: "100%", justifyContent: "center", padding: "13px" }}>
+                  Continuer vers les ONGs →
+                </button>
               )}
             </div>
           )}
@@ -1268,7 +1254,7 @@ export default function JeVotePage() {
                 </span>
               </div>
               <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
-                Obligatoire — classez exactement 3 ONGs. Poids : {ONG_WEIGHTS.join(", ")} pts.
+                Classez jusqu&apos;à 3 ONGs. Poids : {ONG_WEIGHTS.join(", ")} pts.
               </p>
 
               {/* ONG ranking slots */}
@@ -1364,29 +1350,16 @@ export default function JeVotePage() {
               </div>
 
               {step === "ong" && (
-                <>
-                  {ongRanking.length < 3 && (
-                    <p style={{ fontSize: "0.78rem", color: "#f59e0b", marginTop: 12, textAlign: "center", fontWeight: 600 }}>
-                      ⚠ Sélectionnez encore {3 - ongRanking.length} ONG{3 - ongRanking.length > 1 ? "s" : ""}
-                    </p>
-                  )}
-                  <div style={{ display: "flex", gap: 10, marginTop: 10, flexDirection: isMobile ? "column" : "row" }}>
-                    <button type="button" onClick={() => setStep("projects")} className="btn-ghost"
-                      style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem", justifyContent: "center" }}>
-                      ← Retour
-                    </button>
-                    <button type="button" onClick={() => setStep("confirm")}
-                      disabled={ongRanking.length < 3}
-                      className="btn-primary"
-                      style={{
-                        flex: 1, justifyContent: "center", padding: "11px",
-                        opacity: ongRanking.length < 3 ? 0.4 : 1,
-                        cursor: ongRanking.length < 3 ? "not-allowed" : "pointer",
-                      }}>
-                      Confirmer mon vote →
-                    </button>
-                  </div>
-                </>
+                <div style={{ display: "flex", gap: 10, marginTop: 16, flexDirection: isMobile ? "column" : "row" }}>
+                  <button type="button" onClick={() => setStep("projects")} className="btn-ghost"
+                    style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem", justifyContent: "center" }}>
+                    ← Retour
+                  </button>
+                  <button type="button" onClick={() => setStep("confirm")} className="btn-primary"
+                    style={{ flex: 1, justifyContent: "center", padding: "11px" }}>
+                    Confirmer mon vote →
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -1495,12 +1468,12 @@ export default function JeVotePage() {
                   ← Modifier
                 </button>
                 <button type="button" onClick={handleSubmit}
-                  disabled={submitting || projectRanking.length < maxProjects || ongRanking.length < 3}
+                  disabled={submitting || projectRanking.length === 0}
                   className="btn-primary"
                   style={{
                     flex: 1, justifyContent: "center", padding: "13px",
-                    opacity: (submitting || projectRanking.length < maxProjects || ongRanking.length < 3) ? 0.5 : 1,
-                    cursor: (submitting || projectRanking.length < maxProjects || ongRanking.length < 3) ? "not-allowed" : "pointer",
+                    opacity: (submitting || projectRanking.length === 0) ? 0.5 : 1,
+                    cursor: (submitting || projectRanking.length === 0) ? "not-allowed" : "pointer",
                   }}>
                   {submitting ? (
                     <><span style={{ width: 14, height: 14, borderRadius: "50%",

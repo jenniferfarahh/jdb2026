@@ -8,6 +8,8 @@ export interface VoteSession {
   id: string
   viarezоSub: string       // unique ViaRézo sub claim (OIDC identity)
   prenom: string
+  nom: string
+  email: string
   promoType: PromoType
   voterCategory: VoterCategory
   votedAt: string          // ISO timestamp
@@ -31,6 +33,8 @@ export const voteStore = {
       const [inserted] = await tx.insert(voteSessions).values({
         viarezоSub:    session.viarezоSub,
         prenom:        session.prenom,
+        nom:           session.nom,
+        email:         session.email,
         promoType:     session.promoType,
         voterCategory: session.voterCategory,
       }).returning({ id: voteSessions.id })

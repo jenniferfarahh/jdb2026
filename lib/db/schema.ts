@@ -11,6 +11,8 @@ export const voteSessions = pgTable('vote_sessions', {
   id:            uuid('id').primaryKey().defaultRandom(),
   viarezоSub:   text('viarezo_sub').unique().notNull(),
   prenom:        text('prenom').notNull().default(''),
+  nom:           text('nom').notNull().default(''),
+  email:         text('email').notNull().default(''),
   promoType:     text('promo_type').notNull().default('Other'),
   voterCategory: text('voter_category').notNull().default('other'),
   votedAt:       timestamp('voted_at', { withTimezone: true }).defaultNow().notNull(),
