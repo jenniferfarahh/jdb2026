@@ -43,26 +43,28 @@ function detectPromo(user: Record<string, unknown>): PromoType {
 }
 
 export async function GET(req: NextRequest) {
+  // Derive external base URL — req.url is the INTERNAL url behind Dokploy's reverse proxy
+  const fwdHost  = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost:3000'
+  const fwdProto = req.headers.get('x-forwarded-proto') ?? (fwdHost.startsWith('localhost') ? 'http' : 'https')
+  const baseUrl  = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL ?? `${fwdProto}://${fwdHost}`
+  const go = (path: string) => NextResponse.redirect(`${baseUrl}${path}`)
+
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
   const state = searchParams.get('state')
   const error = searchParams.get('error')
 
-  if (error) {
-    return NextResponse.redirect(new URL(`/je-vote?error=${encodeURIComponent(error)}`, req.url))
-  }
-  if (!code) {
-    return NextResponse.redirect(new URL('/je-vote?error=no_code', req.url))
-  }
+  if (error) return go(`/je-vote?error=${encodeURIComponent(error)}`)
+  if (!code) return go('/je-vote?error=no_code')
 
   // CSRF state check
   const storedState = req.cookies.get('oidc_state')?.value
   if (!storedState || storedState !== state) {
-    return NextResponse.redirect(new URL('/je-vote?error=invalid_state', req.url))
+    return go('/je-vote?error=invalid_state')
   }
 
   try {
-    const redirectUri = `${process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+    const redirectUri = `${baseUrl}/api/auth/callback`
 
     // Exchange code → access token
     const tokenRes = await fetch(VIAREZO_TOKEN_URL, {
@@ -79,7 +81,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenRes.ok) {
       console.error('Token exchange failed:', await tokenRes.text())
-      return NextResponse.redirect(new URL('/je-vote?error=token_failed', req.url))
+      return go('/je-vote?error=token_failed')
     }
 
     const tokenData = await tokenRes.json()
@@ -90,7 +92,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (!userRes.ok) {
-      return NextResponse.redirect(new URL('/je-vote?error=userinfo_failed', req.url))
+      return go('/je-vote?error=userinfo_failed')
     }
 
     const user = await userRes.json()
@@ -104,7 +106,7 @@ export async function GET(req: NextRequest) {
 
     const sub: string = user.sub
     if (!sub) {
-      return NextResponse.redirect(new URL('/je-vote?error=no_sub', req.url))
+      return go('/je-vote?error=no_sub')
     }
 
     const prenom  = user.given_name || user.name?.split(' ')[0] || 'Étudiant'
@@ -115,13 +117,13 @@ export async function GET(req: NextRequest) {
 
     console.log(`✅ Auth: ${prenom} ${nom} — promo détectée: ${promo}`)
 
-    const res = NextResponse.redirect(new URL('/je-vote', req.url))
+    const res = NextResponse.redirect(`${baseUrl}/je-vote`)
     setSessionCookie(res, { sub, prenom, nom, email, promo, idToken })
     res.cookies.set('oidc_state', '', { maxAge: 0 })
 
     return res
   } catch (err) {
     console.error('Auth callback error:', err)
-    return NextResponse.redirect(new URL('/je-vote?error=server_error', req.url))
+    return go('/je-vote?error=server_error')
   }
 }
