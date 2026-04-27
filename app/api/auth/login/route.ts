@@ -5,7 +5,12 @@ const VIAREZO_AUTH_URL = 'https://moncompte.viarezo.fr/oidc/authorize'
 
 export async function GET(req: NextRequest) {
   const state = randomBytes(16).toString('hex')
-  const redirectUri = `${process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+
+  // Derive base URL from request host — works on any domain without relying on env vars
+  const host     = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost:3000'
+  const proto    = req.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+  const baseUrl  = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL ?? `${proto}://${host}`
+  const redirectUri = `${baseUrl}/api/auth/callback`
 
   const params = new URLSearchParams({
     response_type: 'code',
