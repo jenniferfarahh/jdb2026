@@ -9,8 +9,7 @@ import { useTheme } from "@/components/ThemeProvider"
 
 const NAV_LINKS = [
   { href: "/projets",                 label: "Projets",   external: false },
-  { href: "/ong",                     label: "ONG",       external: false },
-  { href: "/resultats",               label: "Résultats", external: false },
+  { href: "/ong",                     label: "OBNL",      external: false },
   { href: "mailto:jdb@forum-cs.fr",   label: "Contact",   external: true  },
 ]
 

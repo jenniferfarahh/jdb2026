@@ -5,6 +5,26 @@ import Image from "next/image";
 import { projets, categories } from "@/data/projets";
 import { ongs } from "@/data/ong";
 
+// ── Color helpers ─────────────────────────────────────────────────────────
+
+function luminance(hex: string): number {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return 128;
+  return (parseInt(h.slice(0,2),16)*299 + parseInt(h.slice(2,4),16)*587 + parseInt(h.slice(4,6),16)*114) / 1000;
+}
+function darken(hex: string, f = 0.38): string {
+  const h = hex.replace("#","");
+  if (h.length < 6) return hex;
+  const r = Math.round(parseInt(h.slice(0,2),16)*(1-f));
+  const g = Math.round(parseInt(h.slice(2,4),16)*(1-f));
+  const b = Math.round(parseInt(h.slice(4,6),16)*(1-f));
+  return `#${r.toString(16).padStart(2,"0")}${g.toString(16).padStart(2,"0")}${b.toString(16).padStart(2,"0")}`;
+}
+/** Darken too-light colors so they're always visible on any background */
+function safeColor(hex: string): string {
+  return luminance(hex) > 165 ? darken(hex, 0.45) : hex;
+}
+
 // ── Window width hook ──────────────────────────────────────────────────────
 
 function useWindowWidth() {
@@ -43,7 +63,7 @@ interface Countdown {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const VOTE_START = new Date("2026-04-28T15:30:00.000Z");
+const VOTE_START = new Date("2026-04-28T15:00:00.000Z");
 const VOTE_END   = new Date("2026-04-28T19:00:00.000Z");
 
 const INGENIEUR_WEIGHTS = [5, 4, 3, 2, 1];
@@ -142,20 +162,10 @@ function StepBadge({ n, active }: { n: number; active: boolean }) {
   );
 }
 
-// ── WeightPill ─────────────────────────────────────────────────────────────
-
+// ── WeightPill — hidden, kept for type compatibility ───────────────────────
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function WeightPill({ weight, active }: { weight: number; active: boolean }) {
-  return (
-    <span style={{
-      fontSize: "0.72rem", fontWeight: 700, padding: "3px 8px", borderRadius: 100,
-      flexShrink: 0,
-      background: active ? "rgba(37,99,235,0.2)" : "var(--border)",
-      color: active ? "#4890E8" : "var(--muted)",
-      border: `1px solid ${active ? "rgba(37,99,235,0.4)" : "var(--border)"}`,
-    }}>
-      {weight} pt{weight > 1 ? "s" : ""}
-    </span>
-  );
+  return null;
 }
 
 // ── RankSlot ───────────────────────────────────────────────────────────────
@@ -167,13 +177,14 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
   isMobile?: boolean;
 }) {
   const projet = projectId ? projets.find(p => p.id === projectId) : null;
+  const c = projet ? safeColor(projet.color) : null;
 
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
       borderRadius: 14, transition: "all 0.2s",
-      background: projet ? `${projet.color}12` : "var(--bg-card)",
-      border: `1px solid ${projet ? projet.color + "35" : "var(--border)"}`,
+      background: c ? `${c}14` : "var(--bg-card)",
+      border: `1px solid ${c ? c + "40" : "var(--border)"}`,
       minHeight: 52,
     }}>
       {/* Rank */}
@@ -181,10 +192,10 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
         width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: "0.72rem", fontWeight: 900,
-        background: projet
-          ? `linear-gradient(135deg, ${projet.color}90, ${projet.color}50)`
+        background: c
+          ? `linear-gradient(135deg, ${c}cc, ${c}88)`
           : "var(--border)",
-        color: projet ? "white" : "var(--muted)",
+        color: c ? "white" : "var(--muted)",
       }}>
         {rank}
       </span>
@@ -194,7 +205,7 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
           {/* Color dot */}
           <div style={{
             width: 8, height: 8, borderRadius: "50%",
-            background: projet.color, flexShrink: 0,
+            background: c ?? projet.color, flexShrink: 0,
           }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text)", margin: 0,
@@ -230,7 +241,7 @@ function RankSlot({ rank, weight, projectId, onRemove, onMoveUp, onMoveDown, can
         </>
       ) : (
         <p style={{ fontSize: "0.75rem", color: "var(--muted)", opacity: 0.5, flex: 1 }}>
-          Slot {rank} — libre (optionnel)
+          Slot {rank}
         </p>
       )}
     </div>
@@ -246,21 +257,22 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
   isMobile?: boolean;
 }) {
   const ong = ongId ? ongs.find(o => o.id === ongId) : null;
+  const oc = ong ? safeColor(ong.color) : null;
 
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
       borderRadius: 14, transition: "all 0.2s",
-      background: ong ? `${ong.color}12` : "var(--bg-card)",
-      border: `1px solid ${ong ? ong.color + "35" : "var(--border)"}`,
+      background: oc ? `${oc}14` : "var(--bg-card)",
+      border: `1px solid ${oc ? oc + "40" : "var(--border)"}`,
       minHeight: 52,
     }}>
       <span style={{
         width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: "0.72rem", fontWeight: 900,
-        background: ong ? `linear-gradient(135deg, ${ong.color}90, ${ong.color}50)` : "var(--border)",
-        color: ong ? "white" : "var(--muted)",
+        background: oc ? `linear-gradient(135deg, ${oc}cc, ${oc}88)` : "var(--border)",
+        color: oc ? "white" : "var(--muted)",
       }}>
         {rank}
       </span>
@@ -305,7 +317,7 @@ function OngSlot({ rank, weight, ongId, onRemove, onMoveUp, onMoveDown, canMoveU
         </>
       ) : (
         <p style={{ fontSize: "0.75rem", color: "var(--muted)", opacity: 0.5, flex: 1 }}>
-          Slot {rank} — libre (optionnel)
+          Slot {rank}
         </p>
       )}
     </div>
@@ -453,7 +465,7 @@ export default function JeVotePage() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!promo || projectRanking.length === 0) return;
+    if (!promo || projectRanking.length < maxProjects || ongRanking.length < 3) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -551,7 +563,7 @@ export default function JeVotePage() {
             Les votes ouvrent dans…
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
-            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h30 CEST</strong> — Forum CentraleSupélec
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00 CEST</strong> — Forum CentraleSupélec
           </p>
 
           {/* Countdown blocks */}
@@ -574,7 +586,7 @@ export default function JeVotePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
                 { icon: "🏆", text: "35 000 € de dotation à redistribuer entre les projets" },
-                { icon: "🌍", text: "5 000 € pour le pool ONG — votez pour 3 associations" },
+                { icon: "🌍", text: "5 000 € pour le pool OBNL — votez pour 3 associations" },
                 { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par compte" },
               ].map(({ icon, text }) => (
                 <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -591,7 +603,7 @@ export default function JeVotePage() {
               Découvrir les projets
             </a>
             <a href="/ong" className="btn-ghost" style={{ fontSize: "0.85rem", textAlign: "center", justifyContent: "center" }}>
-              Voir les ONGs
+              Voir les OBNLs
             </a>
           </div>
         </div>
@@ -639,7 +651,7 @@ export default function JeVotePage() {
               textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
               Infos vote sur place
             </p>
-            {[["📍", "Diagonale Eiffel"], ["🕔", "17h30 → 20h45"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
+            {[["📍", "Diagonale Eiffel"], ["🕔", "17h00 → 20h00"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
               <p key={txt} style={{ fontSize: "0.85rem", color: "var(--text)", marginBottom: 4 }}>{icon} {txt}</p>
             ))}
           </div>
@@ -751,7 +763,7 @@ export default function JeVotePage() {
               {pastVote.ongRanking.length > 0 && (
                 <div>
                   <p style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.1em",
-                    textTransform: "uppercase", color: "#2ABFC4", marginBottom: 8 }}>🌍 ONGs</p>
+                    textTransform: "uppercase", color: "#2ABFC4", marginBottom: 8 }}>🌍 OBNLs</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {pastVote.ongRanking.map((id, i) => {
                       const o = ongs.find(x => x.id === id);
@@ -780,7 +792,7 @@ export default function JeVotePage() {
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
             {[
               { icon: "🏆", label: "35 000 €", sub: "Dotation projets" },
-              { icon: "🌍", label: "5 000 €",  sub: "Pool ONG" },
+              { icon: "🌍", label: "5 000 €",  sub: "Pool OBNL" },
               { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
             ].map(({ icon, label, sub }) => (
               <div key={label} className="glass" style={{
@@ -888,7 +900,7 @@ export default function JeVotePage() {
               <div>
                 <p style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
-                  🌍 ONGs soutenues
+                  🌍 OBNLs soutenus
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {ongRanking.map((id, i) => {
@@ -1059,36 +1071,6 @@ export default function JeVotePage() {
             )}
           </div>
 
-          {/* ── Promo banner ────────────────────────────────────────────── */}
-          {auth.authenticated && promo && promo !== "Other" && (
-            <div style={{
-              borderRadius: 16, padding: isMobile ? "12px 14px" : "14px 18px",
-              display: "flex", alignItems: "center", gap: 12,
-              background: "rgba(42,191,196,0.06)", border: "1px solid rgba(42,191,196,0.28)",
-            }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(42,191,196,0.15)", border: "1px solid rgba(42,191,196,0.3)",
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: "var(--teal)", margin: 0, marginBottom: 2 }}>
-                  Promotion détectée via ViaRézo
-                </p>
-                <p style={{ fontSize: isMobile ? "0.82rem" : "0.88rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
-                  {promoLabel(promo)}
-                  <span style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--muted)", marginLeft: 8 }}>
-                    · {maxProjects} projets max · {weights.join("+")} = {maxVoix} voix
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* ── STEP 2: Projects ────────────────────────────────────────── */}
           {promo && promo !== "Other" && (
@@ -1226,10 +1208,17 @@ export default function JeVotePage() {
                 )}
               </div>
 
-              {step === "projects" && projectRanking.length > 0 && (
-                <button type="button" onClick={() => setStep("ong")} className="btn-primary"
-                  style={{ marginTop: 16, width: "100%", justifyContent: "center", padding: "13px" }}>
-                  Continuer vers les ONGs →
+              {step === "projects" && (
+                <button type="button"
+                  onClick={() => setStep("ong")}
+                  disabled={projectRanking.length < maxProjects}
+                  className="btn-primary"
+                  style={{ marginTop: 16, width: "100%", justifyContent: "center", padding: "13px",
+                    opacity: projectRanking.length < maxProjects ? 0.45 : 1,
+                    cursor: projectRanking.length < maxProjects ? "not-allowed" : "pointer" }}>
+                  {projectRanking.length < maxProjects
+                    ? `Choisissez ${maxProjects - projectRanking.length} projet${maxProjects - projectRanking.length > 1 ? "s" : ""} de plus`
+                    : "Continuer vers les OBNLs →"}
                 </button>
               )}
             </div>
@@ -1242,7 +1231,7 @@ export default function JeVotePage() {
                 <h3 style={{ fontWeight: 800, color: "var(--text)", fontSize: "0.95rem",
                   display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
                   <StepBadge n={3} active={step === "ong"} />
-                  ONGs à soutenir
+                  OBNLs à soutenir
                 </h3>
                 <span style={{
                   fontSize: "0.72rem", fontWeight: 700, padding: "4px 10px", borderRadius: 100,
@@ -1254,14 +1243,14 @@ export default function JeVotePage() {
                 </span>
               </div>
               <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
-                Classez jusqu&apos;à 3 ONGs. Poids : {ONG_WEIGHTS.join(", ")} pts.
+                Classez jusqu&apos;à 3 OBNLs.
               </p>
 
               {/* ONG ranking slots */}
               <div style={{ marginBottom: 18 }}>
                 <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
-                  Votre classement ONGs
+                  Votre classement OBNLs
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {Array.from({ length: 3 }, (_, i) => (
@@ -1282,7 +1271,7 @@ export default function JeVotePage() {
               <div style={{ position: "relative", marginBottom: 12 }}>
                 <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
                   color: "var(--muted)", fontSize: "0.85rem", pointerEvents: "none" }}>🔍</span>
-                <input type="text" placeholder="Rechercher une ONG…"
+                <input type="text" placeholder="Rechercher un OBNL…"
                   value={searchOngs} onChange={e => setSearchOngs(e.target.value)}
                   className="input-field" style={{ paddingLeft: 36 }} />
               </div>
@@ -1344,7 +1333,7 @@ export default function JeVotePage() {
                 })}
                 {filteredOngs.length === 0 && (
                   <p style={{ textAlign: "center", padding: "24px 0", fontSize: "0.85rem", color: "var(--muted)" }}>
-                    Aucune ONG trouvée
+                    Aucun OBNL trouvé
                   </p>
                 )}
               </div>
@@ -1355,9 +1344,16 @@ export default function JeVotePage() {
                     style={{ flexShrink: 0, padding: "11px 18px", fontSize: "0.85rem", justifyContent: "center" }}>
                     ← Retour
                   </button>
-                  <button type="button" onClick={() => setStep("confirm")} className="btn-primary"
-                    style={{ flex: 1, justifyContent: "center", padding: "11px" }}>
-                    Confirmer mon vote →
+                  <button type="button"
+                    onClick={() => setStep("confirm")}
+                    disabled={ongRanking.length < 3}
+                    className="btn-primary"
+                    style={{ flex: 1, justifyContent: "center", padding: "11px",
+                      opacity: ongRanking.length < 3 ? 0.45 : 1,
+                      cursor: ongRanking.length < 3 ? "not-allowed" : "pointer" }}>
+                    {ongRanking.length < 3
+                      ? `Choisissez ${3 - ongRanking.length} OBNL${3 - ongRanking.length > 1 ? "s" : ""} de plus`
+                      : "Confirmer mon vote →"}
                   </button>
                 </div>
               )}
@@ -1417,7 +1413,7 @@ export default function JeVotePage() {
                   background: "rgba(42,191,196,0.07)", border: "1px solid rgba(42,191,196,0.2)" }}>
                   <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
                     textTransform: "uppercase", color: "#2ABFC4", margin: "0 0 10px" }}>
-                    ONGs ({ongRanking.length}/3)
+                    OBNLs ({ongRanking.length}/3)
                   </p>
                   {ongRanking.length > 0 ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1468,12 +1464,12 @@ export default function JeVotePage() {
                   ← Modifier
                 </button>
                 <button type="button" onClick={handleSubmit}
-                  disabled={submitting || projectRanking.length === 0}
+                  disabled={submitting || projectRanking.length < maxProjects || ongRanking.length < 3}
                   className="btn-primary"
                   style={{
                     flex: 1, justifyContent: "center", padding: "13px",
-                    opacity: (submitting || projectRanking.length === 0) ? 0.5 : 1,
-                    cursor: (submitting || projectRanking.length === 0) ? "not-allowed" : "pointer",
+                    opacity: (submitting || projectRanking.length < maxProjects || ongRanking.length < 3) ? 0.5 : 1,
+                    cursor: (submitting || projectRanking.length < maxProjects || ongRanking.length < 3) ? "not-allowed" : "pointer",
                   }}>
                   {submitting ? (
                     <><span style={{ width: 14, height: 14, borderRadius: "50%",
