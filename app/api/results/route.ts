@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const stats         = await voteStore.stats()
 
   // Total pool — set via env var
-  const totalPool = Number(process.env.JDB_TOTAL_POOL ?? 45000)
+  const totalPool = Number(process.env.JDB_TOTAL_POOL ?? 35000)
   const ongPool   = Number(process.env.JDB_ONG_POOL ?? 5000)
 
   // Build project inputs

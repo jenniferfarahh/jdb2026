@@ -10,35 +10,34 @@ type PromoType = 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
  * Detect promotion from ViaRézo userinfo.
  *
  * Confirmed ViaRézo fields (from live response):
- *   user.degree_type : "INGE_CS" | "BACH_CS" | ...
+ *   user.degree_type : "INGE_CS" | "INGE_CS_CY" | ... | "BC_AIDAMS" | "BC_BOGE" | ...
  *   user.promo       : "2027" | "2028" | "1" (1st year = P2029) | ...
  *
- * Rules (JDB règlement):
- *   INGE_CS + promo 2027 → P2027   (online, 5 choices)
- *   INGE_CS + promo 2028 → P2028   (online, 5 choices)
- *   INGE_CS + promo 1    → P2029   (online, 5 choices)
- *   BACH_CS (any promo)  → Bachelor (online, 3 choices)
- *   anything else        → Other   (in-person only → blocked online)
+ * Rules (JDB règlement Art. 9):
+ *   INGE_CS* + promo 2027 → P2027   (online vote, 5 choices)
+ *   INGE_CS* + promo 2028 → P2028   (online vote, 5 choices)
+ *   INGE_CS* + promo 1    → P2029   (présentiel only)
+ *   BC_* / BACH* (Bachelor) → Bachelor (présentiel only, 3 choices in-person)
+ *   anything else           → Other  (présentiel only)
  */
 function detectPromo(user: Record<string, unknown>): PromoType {
   const degreeType = typeof user.degree_type === 'string' ? user.degree_type.toUpperCase() : ''
   const promoYear  = typeof user.promo === 'string' ? user.promo.trim() : ''
 
-  // Bachelor — degree type takes priority (promo year doesn't matter for eligibility)
-  if (degreeType.includes('BACH')) return 'Bachelor'
+  // Bachelor — BC_AIDAMS, BC_BOGE, BACH_CS, etc. → présentiel only
+  if (degreeType.startsWith('BC_') || degreeType.includes('BACH')) return 'Bachelor'
 
-  // Ingénieur CentraleSupélec — check promo year
-  if (degreeType === 'INGE_CS') {
+  // Ingénieur CentraleSupélec (INGE_CS, INGE_CS_CY, INGE_CS_EL, etc.)
+  if (degreeType.startsWith('INGE_CS')) {
     if (promoYear === '2027') return 'P2027'
     if (promoYear === '2028') return 'P2028'
-    if (promoYear === '1')    return 'P2029'  // 1st year ingénieurs
+    if (promoYear === '1')    return 'P2029'  // 1st year → présentiel
     return 'Other'
   }
 
-  // Fallback: degree_type absent but promo year present (safety net)
+  // Fallback: degree_type absent but promo year present
   if (promoYear === '2027') return 'P2027'
   if (promoYear === '2028') return 'P2028'
-  if (promoYear === '1')    return 'P2029'
 
   return 'Other'
 }

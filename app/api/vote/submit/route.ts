@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
   const promo = (session.promo ?? 'Other') as PromoType
   const category = promoToCategory(promo)
 
-  if (category === 'other') {
+  if (category !== 'ingenieur') {
     return NextResponse.json({
-      error: 'Le vote en ligne est réservé aux promotions P2027, P2028, P2029 et Bachelor. Merci de voter en présentiel.'
+      error: 'Le vote en ligne est réservé aux promotions P2027 et P2028. Merci de voter en présentiel.'
     }, { status: 403 })
   }
 

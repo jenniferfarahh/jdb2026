@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const hasVoted  = await voteStore.hasVoted(session.sub)
   const promo     = session.promo ?? 'Other'
   const category  = promoToCategory(promo as 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other')
-  const eligible  = category !== 'other'
+  const eligible  = category === 'ingenieur'  // Art. 9: P2027 + P2028 uniquement
 
   return NextResponse.json({
     authenticated: true,

@@ -12,7 +12,9 @@ export const VOTER_WEIGHTS: Record<'ingenieur' | 'bachelor', number[]> = {
 export const ONG_WEIGHTS = [3, 2, 1]
 
 export function promoToCategory(promo: PromoType): VoterCategory {
-  if (promo === 'P2027' || promo === 'P2028' || promo === 'P2029') return 'ingenieur'
+  // Art. 9 : seuls P2027 et P2028 votent en ligne
+  if (promo === 'P2027' || promo === 'P2028') return 'ingenieur'
+  // Bachelor et P2029 → présentiel uniquement
   if (promo === 'Bachelor') return 'bachelor'
   return 'other'
 }
