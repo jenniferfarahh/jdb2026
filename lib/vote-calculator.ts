@@ -64,5 +64,5 @@ export function calculateAllocations(
   // Round to cents
   return results
     .map(p => ({ ...p, allocated: Math.floor(p.allocated * 100) / 100 }))
-    .sort((a, b) => b.allocated - a.allocated)
+    .sort((a, b) => b.totalVotes - a.totalVotes)
 }
