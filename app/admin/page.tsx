@@ -62,9 +62,9 @@ function ResultsTab({ secret }: { secret: string }) {
   );
   if (!results) return null;
 
-  // API returns already sorted by allocated desc, but sort defensively
-  const sortedProjets = [...(results.projects ?? [])].sort((a, b) => b.allocated - a.allocated);
-  const sortedOngs    = [...(results.ongsResults ?? [])].sort((a, b) => b.allocated - a.allocated);
+  // Sort by votes (most voted = #1)
+  const sortedProjets = [...(results.projects ?? [])].sort((a, b) => b.totalVotes - a.totalVotes);
+  const sortedOngs    = [...(results.ongsResults ?? [])].sort((a, b) => b.totalVotes - a.totalVotes);
 
   // Enrich with static data (color, asso, logo…)
   const projetMeta = (id: string) => projets.find(p => p.id === id);
