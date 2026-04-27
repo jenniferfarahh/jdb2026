@@ -638,20 +638,23 @@ export default function JeVotePage() {
         <div className="glass" style={{ borderRadius: 28, padding: isMobile ? "28px 18px" : "40px 32px", maxWidth: 440, width: "100%", textAlign: "center" }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>🏛️</div>
           <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "var(--text)", marginBottom: 10 }}>
-            Vote en présentiel
+            Salut {auth.prenom} !
           </h2>
-          <p style={{ fontSize: "0.88rem", color: "var(--muted)", marginBottom: 20, lineHeight: 1.65 }}>
-            Bonjour <strong style={{ color: "var(--text)" }}>{auth.prenom}</strong> — votre promotion{" "}
-            <strong style={{ color: "var(--blue-light)" }}>{auth.promo}</strong> vote{" "}
-            <strong style={{ color: "var(--text)" }}>en présentiel</strong> uniquement.
+          <p style={{ fontSize: "0.92rem", color: "var(--muted)", marginBottom: 20, lineHeight: 1.7 }}>
+            Le vote en ligne étant réservé aux 1A et 2A, on t&apos;invite à te rendre aux{" "}
+            <strong style={{ color: "var(--text)" }}>stands Forum</strong>, à{" "}
+            <strong style={{ color: "var(--text)" }}>l&apos;accueil</strong> ou{" "}
+            <strong style={{ color: "var(--text)" }}>en face du CROUS</strong>, pour voter en personne.
+            <br />
+            <span style={{ color: "var(--teal)", fontWeight: 700 }}>À toutes&nbsp;!</span>
           </p>
           <div style={{ background: "rgba(42,191,196,0.07)", border: "1px solid rgba(42,191,196,0.2)",
             borderRadius: 16, padding: "14px 18px", marginBottom: 22, textAlign: "left" }}>
             <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
-              Infos vote sur place
+              Où voter ?
             </p>
-            {[["📍", "Diagonale Eiffel"], ["🕔", "17h00 → 20h00"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
+            {[["📍", "Stand Forum — accueil"], ["📍", "Stand Forum — en face du CROUS"], ["🕔", "17h30 → 20h45"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
               <p key={txt} style={{ fontSize: "0.85rem", color: "var(--text)", marginBottom: 4 }}>{icon} {txt}</p>
             ))}
           </div>
