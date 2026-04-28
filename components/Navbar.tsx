@@ -10,7 +10,7 @@ import { useTheme } from "@/components/ThemeProvider"
 const NAV_LINKS = [
   { href: "/projets",                 label: "Projets",   external: false },
   { href: "/ong",                     label: "OBNL",      external: false },
-  { href: "mailto:jdb@forum-cs.fr",   label: "Contact",   external: true  },
+  { href: "/contact",                  label: "Contact",   external: false },
 ]
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
