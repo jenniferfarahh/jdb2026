@@ -883,9 +883,6 @@ export default function JeVotePage() {
                           </p>
                           <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: 0 }}>{p.asso}</p>
                         </div>
-                        <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#4890E8", flexShrink: 0 }}>
-                          {weights[i]} pts
-                        </span>
                       </div>
                     );
                   })}
@@ -925,34 +922,12 @@ export default function JeVotePage() {
                             {o.tagline}
                           </p>
                         </div>
-                        <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#2ABFC4", flexShrink: 0 }}>
-                          {ONG_WEIGHTS[i]} pts
-                        </span>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Totals */}
-          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-            <div className="glass" style={{ flex: 1, borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
-              <p style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em",
-                textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>Voix distribuées</p>
-              <p style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>
-                <span style={{ color: "#4890E8" }}>{totalVoix}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}> / {maxVoix}</span>
-              </p>
-            </div>
-            <div className="glass" style={{ flex: 1, borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
-              <p style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em",
-                textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>Promotion</p>
-              <p style={{ fontSize: "1rem", fontWeight: 900, color: "var(--teal)", margin: 0 }}>
-                {promoLabel(promo)}
-              </p>
-            </div>
           </div>
 
           {/* Rendez-vous au Musée */}
