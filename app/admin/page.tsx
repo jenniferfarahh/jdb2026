@@ -201,17 +201,7 @@ export default function AdminPage() {
   };
 
   const exportCSV = () => {
-    if (!data) return;
-    const rows = ["Prénom,Nom,Email,Promo,Catégorie,Vote à,Projets (classés),ONGs (classés)"];
-    for (const v of data.votes) {
-      const ps = v.projectVotes.map(p => { const proj = projets.find(x => x.id === p.projectId); return `#${p.rank} ${proj?.name ?? p.projectId}(${p.weight}pts)`; }).join(" | ");
-      const os = v.ongVotes.map(o => { const ong = ongs.find(x => x.id === o.ongId); return `#${o.rank} ${ong?.name ?? o.ongId}(${o.weight}pts)`; }).join(" | ");
-      rows.push(`"${v.prenom}","${v.nom}","${v.email}","${v.promoType}","${v.voterCategory}","${v.votedAt}","${ps}","${os}"`);
-    }
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "jdb2026_votes.csv"; a.click();
-    URL.revokeObjectURL(url);
+    window.location.href = `/api/admin/export?token=${encodeURIComponent(secret)}`;
   };
 
   if (!secret) {
