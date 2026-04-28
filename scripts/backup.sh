@@ -1,6 +1,6 @@
 #!/bin/bash
 # JDB 2026 — Backup des votes
-# Double-cliquer sur ce fichier OU lancer dans le terminal :
+# Lance ce script dans le terminal :
 #   bash /Users/jen/Desktop/jdb2026/scripts/backup.sh
 
 REPO="/Users/jen/Desktop/jdb2026"
@@ -11,7 +11,8 @@ SCRIPT="$REPO/scripts/backup_votes.py"
 if [ ! -f "$VENV/bin/python3" ]; then
   echo "⚙️  Création de l'environnement Python…"
   python3 -m venv "$VENV"
-  "$VENV/bin/pip" install psycopg2-binary -q
+  echo "⚙️  Installation des dépendances…"
+  "$VENV/bin/pip" install psycopg2-binary openpyxl -q
   echo "✅ Environnement prêt"
 fi
 
