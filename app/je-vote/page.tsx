@@ -585,7 +585,7 @@ export default function JeVotePage() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { icon: "🏆", text: "34 000 € à redistribuer entre les projets" },
+                { icon: "🏆", text: "35 000 € à redistribuer entre les projets" },
                 { icon: "🌍", text: "5 000 € pour le pool OBNL — votez pour 3 OBNLs" },
                 { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par personne" },
               ].map(({ icon, text }) => (
@@ -794,7 +794,7 @@ export default function JeVotePage() {
           {/* Info row */}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
             {[
-              { icon: "🏆", label: "34 000 €", sub: "Dotation projets" },
+              { icon: "🏆", label: "35 000 €", sub: "Dotation projets" },
               { icon: "🌍", label: "5 000 €",  sub: "Pool OBNL" },
               { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
             ].map(({ icon, label, sub }) => (
@@ -1021,7 +1021,7 @@ export default function JeVotePage() {
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", maxWidth: 420, margin: "0 auto", lineHeight: 1.65 }}>
             Classez vos projets préférés. La dotation de{" "}
-            <strong style={{ color: "var(--text)" }}>34 000 €</strong> est répartie au pro-rata des voix.
+            <strong style={{ color: "var(--text)" }}>35 000 €</strong> est répartie au pro-rata des voix.
           </p>
         </div>
 
