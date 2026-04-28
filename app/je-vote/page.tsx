@@ -39,7 +39,7 @@ function useWindowWidth() {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type PromoType = "P2027" | "P2028" | "P2029" | "Bachelor" | "Other";
+type PromoType = "P2026" | "P2027" | "P2028" | "P2029" | "Bachelor" | "Other";
 type Step = "auth" | "projects" | "ong" | "confirm" | "success" | "already-voted" | "closed" | "before" | "blocked";
 
 interface AuthState {
@@ -523,6 +523,7 @@ export default function JeVotePage() {
   };
 
   const promoLabel = (p: PromoType | null) =>
+    p === "P2026" ? "Ingénieur P2026" :
     p === "P2027" ? "Ingénieur P2027" :
     p === "P2028" ? "Ingénieur P2028" :
     p === "P2029" ? "Ingénieur P2029" :

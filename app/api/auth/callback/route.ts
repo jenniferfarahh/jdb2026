@@ -4,19 +4,20 @@ import { setSessionCookie } from '@/lib/session-store'
 const VIAREZO_TOKEN_URL    = 'https://moncompte.viarezo.fr/oidc/token'
 const VIAREZO_USERINFO_URL = 'https://moncompte.viarezo.fr/oidc/userinfo'
 
-type PromoType = 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
+type PromoType = 'P2026' | 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
 
 /**
  * Detect promotion from ViaRézo userinfo.
  *
  * Confirmed ViaRézo fields (from live response):
  *   user.degree_type : "INGE_CS" | "INGE_CS_CY" | ... | "BC_AIDAMS" | "BC_BOGE" | ...
- *   user.promo       : "2027" | "2028" | "1" (1st year = P2029) | ...
+ *   user.promo       : "2026" | "2027" | "2028" | "1" (1st year = P2029) | "3" (3A fallback) | ...
  *
  * Rules (JDB règlement Art. 9):
  *   INGE_CS* + promo 2027 → P2027   (online vote, 5 choices)
  *   INGE_CS* + promo 2028 → P2028   (online vote, 5 choices)
- *   INGE_CS* + promo 1    → P2029   (présentiel only)
+ *   INGE_CS* + promo 2026 → P2026   (3A — présentiel only)
+ *   INGE_CS* + promo 1    → P2029   (1A — présentiel only)
  *   BC_* / BACH* (Bachelor) → Bachelor (présentiel only, 3 choices in-person)
  *   anything else           → Other  (présentiel only)
  */
@@ -31,13 +32,15 @@ function detectPromo(user: Record<string, unknown>): PromoType {
   if (degreeType.startsWith('INGE_CS')) {
     if (promoYear === '2027') return 'P2027'
     if (promoYear === '2028') return 'P2028'
-    if (promoYear === '1')    return 'P2029'  // 1st year → présentiel
+    if (promoYear === '2026' || promoYear === '3') return 'P2026'  // 3A → présentiel
+    if (promoYear === '1')    return 'P2029'                       // 1A → présentiel
     return 'Other'
   }
 
   // Fallback: degree_type absent but promo year present
   if (promoYear === '2027') return 'P2027'
   if (promoYear === '2028') return 'P2028'
+  if (promoYear === '2026') return 'P2026'
 
   return 'Other'
 }

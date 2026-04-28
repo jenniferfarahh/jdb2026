@@ -1,7 +1,7 @@
 export const VOTE_START = new Date('2026-04-28T15:00:00.000Z') // 17h00 CEST
 export const VOTE_END   = new Date('2026-04-28T18:45:00.000Z') // 20h45 CEST
 
-export type PromoType = 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
+export type PromoType = 'P2026' | 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
 export type VoterCategory = 'ingenieur' | 'bachelor' | 'other'
 
 export const VOTER_WEIGHTS: Record<'ingenieur' | 'bachelor', number[]> = {
