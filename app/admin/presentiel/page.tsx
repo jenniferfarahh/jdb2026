@@ -14,7 +14,7 @@ const ONG_WEIGHTS  = [3, 2, 1];
 
 function getWeights(cat: Category) { return cat === "bachelor" ? WEIGHTS_BACH : WEIGHTS_ING; }
 function getMax(cat: Category)     { return cat === "bachelor" ? 3 : 5; }
-function getCatLabel(cat: Category) { return cat === "bachelor" ? "Bachelor" : "3A — Ingénieur"; }
+function getCatLabel(cat: Category) { return cat === "bachelor" ? "Bachelor" : "3A / Césure"; }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function pill(bg: string, text: string) {
@@ -236,7 +236,7 @@ export default function PresentielPage() {
                   transition: "all 0.15s",
                 }}>
                   {cat === "3a"
-                    ? <>🎓 3A — P2026<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>5 projets</span></>
+                    ? <>🎓 3A / Césure<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>5 projets</span></>
                     : <>🎓 Bachelor<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>3 projets</span></>
                   }
                 </button>
