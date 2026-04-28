@@ -585,7 +585,7 @@ export default function JeVotePage() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { icon: "🏆", text: "35 000 € à redistribuer entre les projets" },
+                { icon: "🏆", text: "34 000 € à redistribuer entre les projets" },
                 { icon: "🌍", text: "5 000 € pour le pool OBNL — votez pour 3 OBNLs" },
                 { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par personne" },
               ].map(({ icon, text }) => (
@@ -794,7 +794,7 @@ export default function JeVotePage() {
           {/* Info row */}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
             {[
-              { icon: "🏆", label: "35 000 €", sub: "Dotation projets" },
+              { icon: "🏆", label: "34 000 €", sub: "Dotation projets" },
               { icon: "🌍", label: "5 000 €",  sub: "Pool OBNL" },
               { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
             ].map(({ icon, label, sub }) => (
@@ -937,7 +937,7 @@ export default function JeVotePage() {
           </div>
 
           {/* Totals */}
-          <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
             <div className="glass" style={{ flex: 1, borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
               <p style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em",
                 textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>Voix distribuées</p>
@@ -953,6 +953,18 @@ export default function JeVotePage() {
                 {promoLabel(promo)}
               </p>
             </div>
+          </div>
+
+          {/* Rendez-vous au Musée */}
+          <div style={{
+            borderRadius: 20, padding: "18px 22px", marginBottom: 24, textAlign: "center",
+            background: "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(42,191,196,0.15))",
+            border: "1px solid rgba(42,191,196,0.35)",
+          }}>
+            <p style={{ fontSize: "1.3rem", marginBottom: 6 }}>🏛️</p>
+            <p style={{ fontSize: "1rem", fontWeight: 900, color: "var(--text)", margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+              Viens découvrir les gagnants de la JdB au Musée à 21h&nbsp;!
+            </p>
           </div>
 
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
@@ -1009,7 +1021,7 @@ export default function JeVotePage() {
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", maxWidth: 420, margin: "0 auto", lineHeight: 1.65 }}>
             Classez vos projets préférés. La dotation de{" "}
-            <strong style={{ color: "var(--text)" }}>35 000 €</strong> est répartie au pro-rata des voix.
+            <strong style={{ color: "var(--text)" }}>34 000 €</strong> est répartie au pro-rata des voix.
           </p>
         </div>
 
