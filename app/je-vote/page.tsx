@@ -563,7 +563,7 @@ export default function JeVotePage() {
             Les votes ouvrent dans…
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
-            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00 CEST</strong> — Forum CentraleSupélec
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h30 CEST</strong> — Forum CentraleSupélec
           </p>
 
           {/* Countdown blocks */}
@@ -622,7 +622,7 @@ export default function JeVotePage() {
             Votes clôturés
           </h2>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.6 }}>
-            La fenêtre de vote s&apos;est fermée le 28 avril 2026 à 21h00 CEST.
+            La fenêtre de vote s&apos;est fermée le 28 avril 2026 à 20h45 CEST.
             Merci à tous les participants&nbsp;!
           </p>
         </div>
