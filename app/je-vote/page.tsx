@@ -563,7 +563,7 @@ export default function JeVotePage() {
             Les votes ouvrent dans…
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
-            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00</strong> — Forum CentraleSupélec
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00</strong>
           </p>
 
           {/* Countdown blocks */}

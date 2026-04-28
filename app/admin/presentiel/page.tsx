@@ -182,6 +182,21 @@ export default function PresentielPage() {
           </h2>
         </div>
 
+        {/* Instructions */}
+        <div style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)",
+          borderRadius: 14, padding: "12px 16px", marginBottom: 20 }}>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--blue-light)",
+            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+            ⚠️ Instructions saisie
+          </p>
+          {["Écrire en MAJUSCULES (ex: MARIE, DUPONT)",
+            "Pas de tirets — écrire JEAN MARIE et non JEAN-MARIE",
+            "Pas d'accents — écrire ELEONORE et non ÉLÉONORE",
+            "Vérifier la carte étudiante avant de valider"].map(txt => (
+            <p key={txt} style={{ fontSize: "0.82rem", color: "var(--muted)", margin: "3px 0" }}>• {txt}</p>
+          ))}
+        </div>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--teal)",
@@ -189,8 +204,8 @@ export default function PresentielPage() {
               Prénom
             </label>
             <input ref={nomRef} className="input-field" value={prenom}
-              onChange={e => { setPrenom(e.target.value); setAlreadyVoted(false); }}
-              placeholder="ex: Marie" style={{ fontSize: "1rem", padding: "12px 14px" }} />
+              onChange={e => { setPrenom(e.target.value.toUpperCase()); setAlreadyVoted(false); }}
+              placeholder="ex: MARIE" style={{ fontSize: "1rem", padding: "12px 14px", textTransform: "uppercase" }} />
           </div>
           <div>
             <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--teal)",
@@ -198,9 +213,9 @@ export default function PresentielPage() {
               Nom
             </label>
             <input className="input-field" value={nom}
-              onChange={e => { setNom(e.target.value); setAlreadyVoted(false); }}
+              onChange={e => { setNom(e.target.value.toUpperCase()); setAlreadyVoted(false); }}
               onKeyDown={e => e.key === "Enter" && handleStudentNext()}
-              placeholder="ex: Dupont" style={{ fontSize: "1rem", padding: "12px 14px" }} />
+              placeholder="ex: DUPONT" style={{ fontSize: "1rem", padding: "12px 14px", textTransform: "uppercase" }} />
           </div>
 
           {/* Category toggle */}
