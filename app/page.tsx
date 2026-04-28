@@ -36,7 +36,7 @@ const infoCards = [
   {
     icon: <IconClock />,
     label: "Horaires",
-    value: <>17h30<br/>→ 20h45</>,
+    value: <>17h00<br/>→ 20h45</>,
     bg: "rgba(42,191,196,0.12)",
     color: "var(--teal)",
     border: "rgba(42,191,196,0.28)",

@@ -563,7 +563,7 @@ export default function JeVotePage() {
             Les votes ouvrent dans…
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
-            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h30 CEST</strong> — Forum CentraleSupélec
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00 CEST</strong> — Forum CentraleSupélec
           </p>
 
           {/* Countdown blocks */}
@@ -654,7 +654,7 @@ export default function JeVotePage() {
               textTransform: "uppercase", color: "var(--teal)", marginBottom: 10 }}>
               Où voter ?
             </p>
-            {[["📍", "Stand Forum — accueil"], ["📍", "Stand Forum — en face du CROUS"], ["🕔", "17h30 → 20h45"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
+            {[["📍", "Stand Forum — accueil"], ["📍", "Stand Forum — en face du CROUS"], ["🕔", "17h00 → 20h45"], ["🪪", "Carte étudiante obligatoire"]].map(([icon, txt]) => (
               <p key={txt} style={{ fontSize: "0.85rem", color: "var(--text)", marginBottom: 4 }}>{icon} {txt}</p>
             ))}
           </div>

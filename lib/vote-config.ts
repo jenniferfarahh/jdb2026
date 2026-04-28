@@ -1,4 +1,4 @@
-export const VOTE_START = new Date('2026-04-28T15:30:00.000Z') // 17h30 CEST
+export const VOTE_START = new Date('2026-04-28T15:00:00.000Z') // 17h00 CEST
 export const VOTE_END   = new Date('2026-04-28T18:45:00.000Z') // 20h45 CEST
 
 export type PromoType = 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
