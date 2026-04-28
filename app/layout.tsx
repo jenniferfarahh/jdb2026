@@ -13,6 +13,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "JDB 2026 — Journée des Bourses | Forum CentraleSupélec",
   description: "La Journée des Bourses 2026 du Forum CentraleSupélec. Découvrez les projets, les ONG partenaires et votez.",
+  icons: {
+    icon: "/logo-jdb.png",
+    apple: "/logo-jdb.png",
+  },
 };
 
 export const viewport = {
