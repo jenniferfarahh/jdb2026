@@ -62,9 +62,9 @@ function ResultsTab({ secret }: { secret: string }) {
   );
   if (!results) return null;
 
-  // Sort by votes (most voted = #1)
-  const sortedProjets = [...(results.projects ?? [])].sort((a, b) => b.totalVotes - a.totalVotes);
-  const sortedOngs    = [...(results.ongsResults ?? [])].sort((a, b) => b.totalVotes - a.totalVotes);
+  // Sort by allocated amount (highest = #1)
+  const sortedProjets = [...(results.projects ?? [])].sort((a, b) => b.allocated - a.allocated);
+  const sortedOngs    = [...(results.ongsResults ?? [])].sort((a, b) => b.allocated - a.allocated);
 
   // Enrich with static data (color, asso, logo…)
   const projetMeta = (id: string) => projets.find(p => p.id === id);
@@ -114,15 +114,11 @@ function ResultsTab({ secret }: { secret: string }) {
                   <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                     <div style={{ textAlign: "right" }}>
                       <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Pts</p>
-                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.9rem" }}>{p.totalVotes}</p>
+                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.85rem" }}>{p.totalVotes}</p>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Part</p>
-                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.9rem" }}>{p.percentage.toFixed(1)}%</p>
-                    </div>
-                    <div style={{ textAlign: "right", minWidth: 64 }}>
-                      <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Alloué</p>
-                      <p style={{ fontWeight: 900, color, margin: 0, fontSize: "1rem" }}>{p.allocated} €</p>
+                    <div style={{ textAlign: "right", minWidth: 80, background: `${color}18`, border: `1px solid ${color}40`, borderRadius: 10, padding: "6px 12px" }}>
+                      <p style={{ fontSize: "0.6rem", color, margin: 0, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Alloué</p>
+                      <p style={{ fontWeight: 900, color, margin: 0, fontSize: "1.15rem" }}>{p.allocated} €</p>
                     </div>
                   </div>
                 </div>
@@ -154,15 +150,11 @@ function ResultsTab({ secret }: { secret: string }) {
                   <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                     <div style={{ textAlign: "right" }}>
                       <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Pts</p>
-                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.9rem" }}>{o.totalVotes}</p>
+                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.85rem" }}>{o.totalVotes}</p>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Part</p>
-                      <p style={{ fontWeight: 800, color: "var(--text)", margin: 0, fontSize: "0.9rem" }}>{o.percentage.toFixed(1)}%</p>
-                    </div>
-                    <div style={{ textAlign: "right", minWidth: 64 }}>
-                      <p style={{ fontSize: "0.65rem", color: "var(--muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>Alloué</p>
-                      <p style={{ fontWeight: 900, color, margin: 0, fontSize: "1rem" }}>{o.allocated} €</p>
+                    <div style={{ textAlign: "right", minWidth: 80, background: `${color}18`, border: `1px solid ${color}40`, borderRadius: 10, padding: "6px 12px" }}>
+                      <p style={{ fontSize: "0.6rem", color, margin: 0, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Alloué</p>
+                      <p style={{ fontWeight: 900, color, margin: 0, fontSize: "1.15rem" }}>{o.allocated} €</p>
                     </div>
                   </div>
                 </div>
