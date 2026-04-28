@@ -791,21 +791,16 @@ export default function JeVotePage() {
             </div>
           )}
 
-          {/* Info row */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
-            {[
-              { icon: "🏆", label: "35 000 €", sub: "Dotation projets" },
-              { icon: "🌍", label: "5 000 €",  sub: "Pool OBNL" },
-              { icon: "🗳️", label: "28 avril",  sub: "Résultats en soirée" },
-            ].map(({ icon, label, sub }) => (
-              <div key={label} className="glass" style={{
-                borderRadius: 16, padding: "14px 18px", textAlign: "center", minWidth: 100,
-              }}>
-                <p style={{ fontSize: "1.2rem", marginBottom: 4 }}>{icon}</p>
-                <p style={{ fontSize: "0.92rem", fontWeight: 900, color: "var(--text)", margin: 0 }}>{label}</p>
-                <p style={{ fontSize: "0.68rem", color: "var(--muted)", marginTop: 2 }}>{sub}</p>
-              </div>
-            ))}
+          {/* Rendez-vous au Musée */}
+          <div style={{
+            borderRadius: 20, padding: "18px 22px", marginBottom: 28, textAlign: "center",
+            background: "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(42,191,196,0.15))",
+            border: "1px solid rgba(42,191,196,0.35)",
+          }}>
+            <p style={{ fontSize: "1.3rem", marginBottom: 6 }}>🏛️</p>
+            <p style={{ fontSize: "1rem", fontWeight: 900, color: "var(--text)", margin: 0, letterSpacing: "-0.01em" }}>
+              Viens découvrir les gagnants de la JdB au Musée à 21h&nbsp;!
+            </p>
           </div>
 
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", flexDirection: isMobile ? "column" : "row" }}>
