@@ -1384,13 +1384,8 @@ export default function JeVotePage() {
                 Confirmer et soumettre
               </h3>
 
-              {/* Summary grid — column on mobile, 2-col on desktop */}
-              <div style={{
-                display: isMobile ? "flex" : "grid",
-                flexDirection: isMobile ? "column" : undefined,
-                gridTemplateColumns: isMobile ? undefined : "1fr 1fr",
-                gap: 10, marginBottom: 16
-              }}>
+              {/* Summary — stacked, full width */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                 <div style={{ padding: "14px 16px", borderRadius: 14,
                   background: "rgba(37,99,235,0.07)", border: "1px solid rgba(37,99,235,0.2)" }}>
                   <p style={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.1em",
@@ -1402,19 +1397,16 @@ export default function JeVotePage() {
                       {projectRanking.map((id, i) => {
                         const p = projets.find(x => x.id === id)!;
                         return (
-                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                             <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontSize: "0.6rem", fontWeight: 900,
                               background: `${p.color}30`, color: p.color }}>
                               {i + 1}
                             </span>
-                            <span style={{ flex: 1, fontSize: "0.78rem", fontWeight: 700, color: "var(--text)",
+                            <span style={{ flex: 1, fontSize: "0.82rem", fontWeight: 700, color: "var(--text)",
                               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {p.name}
-                            </span>
-                            <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#4890E8", flexShrink: 0 }}>
-                              {weights[i]}pts
                             </span>
                           </div>
                         );
@@ -1435,14 +1427,11 @@ export default function JeVotePage() {
                       {ongRanking.map((id, i) => {
                         const o = ongs.find(x => x.id === id)!;
                         return (
-                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                             <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>{o.logo}</span>
-                            <span style={{ flex: 1, fontSize: "0.78rem", fontWeight: 700, color: "var(--text)",
+                            <span style={{ flex: 1, fontSize: "0.82rem", fontWeight: 700, color: "var(--text)",
                               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {o.name}
-                            </span>
-                            <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2ABFC4", flexShrink: 0 }}>
-                              {ONG_WEIGHTS[i]}pts
                             </span>
                           </div>
                         );
