@@ -563,7 +563,7 @@ export default function JeVotePage() {
             Les votes ouvrent dans…
           </h1>
           <p style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: 36, lineHeight: 1.6 }}>
-            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00 CEST</strong> — Forum CentraleSupélec
+            Mardi <strong style={{ color: "var(--text)" }}>28 avril 2026 à 17h00</strong> — Forum CentraleSupélec
           </p>
 
           {/* Countdown blocks */}
@@ -585,9 +585,9 @@ export default function JeVotePage() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { icon: "🏆", text: "35 000 € de dotation à redistribuer entre les projets" },
-                { icon: "🌍", text: "5 000 € pour le pool OBNL — votez pour 3 associations" },
-                { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par compte" },
+                { icon: "🏆", text: "35 000 € à redistribuer entre les projets" },
+                { icon: "🌍", text: "5 000 € pour le pool OBNL — votez pour 3 OBNLs" },
+                { icon: "🔐", text: "Vote sécurisé via ViaRézo — 1 vote par personne" },
               ].map(({ icon, text }) => (
                 <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                   <span style={{ fontSize: "1rem", flexShrink: 0, marginTop: 1 }}>{icon}</span>
