@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     pin: string
     nom: string
     prenom: string
-    category: 'ingenieur' | 'bachelor'
+    category: '3a' | 'bachelor'
     projectRanking: string[]
     ongRanking: string[]
   }
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       prenom,
       nom,
       email:         '',
-      promoType:     category === 'bachelor' ? 'Bachelor' : 'P2029',
+      promoType:     category === 'bachelor' ? 'Bachelor' : 'P2026',
       voterCategory: category === 'bachelor' ? 'bachelor' : 'ingenieur',
       votedAt:       new Date().toISOString(),
       projectVotes:  projectRanking.map((id, i) => ({ projectId: id, rank: i + 1, weight: weights[i] })),

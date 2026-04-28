@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { projets } from "@/data/projets";
 import { ongs } from "@/data/ong";
 
-type Category = "ingenieur" | "bachelor";
+type Category = "3a" | "bachelor";
 type Step = "pin" | "student" | "projects" | "ong" | "confirm" | "success";
 
 const PIN_KEY = "presentiel_pin";
@@ -14,6 +14,7 @@ const ONG_WEIGHTS  = [3, 2, 1];
 
 function getWeights(cat: Category) { return cat === "bachelor" ? WEIGHTS_BACH : WEIGHTS_ING; }
 function getMax(cat: Category)     { return cat === "bachelor" ? 3 : 5; }
+function getCatLabel(cat: Category) { return cat === "bachelor" ? "Bachelor" : "3A — Ingénieur"; }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function pill(bg: string, text: string) {
@@ -31,7 +32,7 @@ export default function PresentielPage() {
   const [pinError, setPinError]   = useState("");
   const [nom, setNom]             = useState("");
   const [prenom, setPrenom]       = useState("");
-  const [category, setCategory]   = useState<Category>("ingenieur");
+  const [category, setCategory]   = useState<Category>("3a");
   const [projects, setProjects]   = useState<string[]>([]);
   const [ongRanking, setOng]      = useState<string[]>([]);
   const [search, setSearch]       = useState("");
@@ -104,7 +105,7 @@ export default function PresentielPage() {
 
   // ── Reset for next student ────────────────────────────────────────────────
   function reset() {
-    setNom(""); setPrenom(""); setCategory("ingenieur");
+    setNom(""); setPrenom(""); setCategory("3a");
     setProjects([]); setOng([]); setSearch(""); setError("");
     setAlreadyVoted(false);
     setStep("student");
@@ -222,10 +223,10 @@ export default function PresentielPage() {
           <div>
             <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--teal)",
               textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 8 }}>
-              Cursus (visible sur la carte)
+              Cursus
             </label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {(["ingenieur", "bachelor"] as Category[]).map(cat => (
+              {(["3a", "bachelor"] as Category[]).map(cat => (
                 <button key={cat} onClick={() => setCategory(cat)} style={{
                   padding: "14px 10px", borderRadius: 14, border: "2px solid",
                   borderColor: category === cat ? "var(--blue)" : "var(--border)",
@@ -234,8 +235,8 @@ export default function PresentielPage() {
                   cursor: "pointer", fontWeight: 700, fontSize: "0.9rem",
                   transition: "all 0.15s",
                 }}>
-                  {cat === "ingenieur"
-                    ? <>🎓 Ingénieur / Autre<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>5 projets</span></>
+                  {cat === "3a"
+                    ? <>🎓 3A — P2026<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>5 projets</span></>
                     : <>🎓 Bachelor<br /><span style={{ fontSize: "0.75rem", opacity: 0.7 }}>3 projets</span></>
                   }
                 </button>
@@ -282,7 +283,7 @@ export default function PresentielPage() {
                 {prenom} {nom}
               </h2>
               <p style={{ color: "var(--muted)", fontSize: "0.8rem", margin: 0 }}>
-                {category === "bachelor" ? "Bachelor — 3 projets" : "Ingénieur — 5 projets"}
+                {getCatLabel(category)} — {getMax(category)} projets
               </p>
             </div>
           </div>
@@ -512,7 +513,7 @@ export default function PresentielPage() {
         </h2>
         <p style={{ textAlign: "center", color: "var(--muted)", marginBottom: 24,
           fontSize: "0.88rem" }}>
-          {prenom} {nom} — {category === "bachelor" ? "Bachelor" : "Ingénieur / Autre"}
+          {prenom} {nom} — {getCatLabel(category)}
         </p>
 
         {/* Projects summary */}
