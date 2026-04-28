@@ -1,5 +1,5 @@
-export const VOTE_START = new Date('2026-04-28T15:00:00.000Z') // 17h00 CEST
-export const VOTE_END   = new Date('2026-04-28T19:00:00.000Z') // 21h00 CEST
+export const VOTE_START = new Date('2026-04-28T19:11:00.000Z') // now
+export const VOTE_END   = new Date('2026-04-28T19:18:00.000Z') // +7 min buffer for deploy
 
 export type PromoType = 'P2026' | 'P2027' | 'P2028' | 'P2029' | 'Bachelor' | 'Other'
 export type VoterCategory = 'ingenieur' | 'bachelor' | 'other'
