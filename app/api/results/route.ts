@@ -27,11 +27,11 @@ export async function GET(req: NextRequest) {
     totalVotes: projectTotals.get(p.id) ?? 0,
   }))
 
-  // Build ONG inputs — distribute ONG pool equally as cap per ONG
+  // Build ONG inputs — no cap, purely proportional distribution
   const ongInputs = ongs.map(o => ({
     id: o.id,
     name: o.name,
-    requestedAmount: ongPool / ongs.length,
+    requestedAmount: ongPool, // high cap so no OBNL is ever capped
     totalVotes: ongTotals.get(o.id) ?? 0,
   }))
 
